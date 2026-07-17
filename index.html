@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Piano Touch Game</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
+    <h1>Piano Touch Game</h1>
+
+    <button id="startBtn">Start Game</button>
+
+    <section id="gameArea" class="hidden">
+      <p>Tap this note:</p>
+      <h2 id="targetNote">C4</h2>
+
+      <p id="feedback"></p>
+
+<div class="stats">
+  <p>Score: <span id="score">0</span></p>
+</div>
+      
+
+      <div class="keyboard">
+        <button class="key" data-note="C4">C</button>
+        <button class="key" data-note="D4">D</button>
+        <button class="key" data-note="E4">E</button>
+        <button class="key" data-note="F4">F</button>
+        <button class="key" data-note="G4">G</button>
+        <button class="key" data-note="A4">A</button>
+        <button class="key" data-note="B4">B</button>
+        <button class="key" data-note="C5">C</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/tone@latest/build/Tone.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
