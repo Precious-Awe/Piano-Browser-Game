@@ -1,3 +1,5 @@
+import { initialiseAudio, playNote } from "./audio.js";
+
 const startBtn = document.getElementById("startBtn");
 const gameArea = document.getElementById("gameArea");
 const targetNoteEl = document.getElementById("targetNote");
@@ -18,10 +20,8 @@ let noteStartTime = 0;
 let totalReactionTime = 0;
 let timerInterval;
 
-const synth = new Tone.Synth().toDestination();
-
 startBtn.addEventListener("click", async () => {
-  await Tone.start();
+  await initialiseAudio();
   startGame();
 });
 
@@ -59,13 +59,20 @@ function chooseNewNote() {
 
 function updateStats() {
   const totalAttempts = correct + wrong;
-  const accuracy = totalAttempts === 0 ? 100 : Math.round((correct / totalAttempts) * 100);
-  const averageReaction =
-    correct === 0 ? 0 : (totalReactionTime / correct / 1000).toFixed(2);
 
-  scoreEl.textContent = `
-    ${score} | Time: ${timeLeft}s | Accuracy: ${accuracy}% | Combo: ${combo} | Avg Reaction: ${averageReaction}s
-  `;
+  const accuracy =
+    totalAttempts === 0
+      ? 100
+      : Math.round((correct / totalAttempts) * 100);
+
+  const averageReaction =
+    correct === 0
+      ? 0
+      : (totalReactionTime / correct / 1000).toFixed(2);
+
+  scoreEl.textContent =
+    `${score} | Time: ${timeLeft}s | Accuracy: ${accuracy}% | ` +
+    `Combo: ${combo} | Avg Reaction: ${averageReaction}s`;
 }
 
 keys.forEach((key) => {
@@ -73,7 +80,8 @@ keys.forEach((key) => {
     if (!gameActive) return;
 
     const selectedNote = key.dataset.note;
-    synth.triggerAttackRelease(selectedNote, "8n");
+
+    playNote(selectedNote);
 
     if (selectedNote === targetNote) {
       const reactionTime = performance.now() - noteStartTime;
@@ -84,7 +92,9 @@ keys.forEach((key) => {
 
       score += 10 + combo;
 
-      feedbackEl.textContent = `Correct! Reaction time: ${(reactionTime / 1000).toFixed(2)}s`;
+      feedbackEl.textContent =
+        `Correct! Reaction time: ${(reactionTime / 1000).toFixed(2)}s`;
+
       chooseNewNote();
     } else {
       wrong++;
@@ -101,9 +111,16 @@ function endGame() {
   clearInterval(timerInterval);
 
   const totalAttempts = correct + wrong;
-  const accuracy = totalAttempts === 0 ? 0 : Math.round((correct / totalAttempts) * 100);
+
+  const accuracy =
+    totalAttempts === 0
+      ? 0
+      : Math.round((correct / totalAttempts) * 100);
+
   const averageReaction =
-    correct === 0 ? 0 : (totalReactionTime / correct / 1000).toFixed(2);
+    correct === 0
+      ? 0
+      : (totalReactionTime / correct / 1000).toFixed(2);
 
   targetNoteEl.textContent = "Game Over";
 
