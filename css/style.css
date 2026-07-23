@@ -1,0 +1,129 @@
+style.css
+
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin: 0;
+  padding: 20px;
+  background: #f5f5f5;
+}
+
+.hidden {
+  display: none;
+}
+
+.keyboard {
+  position: relative;
+  display: flex;
+  width: min(92vw, 760px);
+  height: 240px;
+  margin: 30px auto;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.key {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    transform 0.08s ease,
+    background-color 0.08s ease,
+    box-shadow 0.08s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.white-key {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  background: linear-gradient(to bottom, #ffffff 0%, #f1f1f1 100%);
+  border: 1px solid #222;
+  border-radius: 0 0 7px 7px;
+  box-shadow: 0 5px 0 #b8b8b8;
+  z-index: 1;
+}
+
+.white-key span {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #222;
+}
+
+.black-key {
+  position: absolute;
+  top: 0;
+  width: 8.5%;
+  height: 62%;
+  background: linear-gradient(to bottom, #333333 0%, #050505 100%);
+  border: 1px solid #000;
+  border-radius: 0 0 5px 5px;
+  box-shadow: 0 4px 0 #000;
+  z-index: 2;
+}
+
+.black-key span {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.black-key-c-sharp {
+  left: 8%;
+}
+
+.black-key-d-sharp {
+  left: 22.25%;
+}
+
+.black-key-f-sharp {
+  left: 50.75%;
+}
+
+.black-key-g-sharp {
+  left: 65%;
+}
+
+.black-key-a-sharp {
+  left: 79.25%;
+}
+
+.key:active,
+.key.active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.white-key:active,
+.white-key.active {
+  background: #d8eaff;
+}
+
+.black-key:active,
+.black-key.active {
+  background: #2e6fa3;
+}
+
+@media (max-width: 600px) {
+  .keyboard {
+    width: 96vw;
+    height: 190px;
+  }
+
+  .white-key span {
+    bottom: 10px;
+    font-size: 0.82rem;
+  }
+
+  .black-key span {
+    font-size: 0.58rem;
+  }
+}
