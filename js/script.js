@@ -7,7 +7,21 @@ const feedbackEl = document.getElementById("feedback");
 const scoreEl = document.getElementById("score");
 const keys = document.querySelectorAll(".key");
 
-const notes = ["C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5"];
+const notes = [
+  "C4",
+  "C#4",
+  "D4",
+  "D#4",
+  "E4",
+  "F4",
+  "F#4",
+  "G4",
+  "G#4",
+  "A4",
+  "A#4",
+  "B4",
+  "C5"
+];
 
 let targetNote = "";
 let score = 0;
