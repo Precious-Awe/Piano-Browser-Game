@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Piano Touch Game</title>
   <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="./css/game.css" />
+  <link rel="stylesheet" href="./css/keyboard.css" />
 </head>
+
 <body>
   <main>
     <h1>Piano Touch Game</h1>
@@ -16,65 +19,100 @@
       <p>Tap this note:</p>
       <h2 id="targetNote">C4</h2>
 
+      <div class="scoreboard">
+        <div class="stat-card">
+          <span class="stat-label">Score</span>
+          <span class="stat-value" id="scoreValue">0</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-label">Time</span>
+          <span class="stat-value" id="timeValue">30s</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-label">Accuracy</span>
+          <span class="stat-value" id="accuracyValue">100%</span>
+        </div>
+
+        <div class="stat-card">
+          <span class="stat-label">Combo</span>
+          <span class="stat-value" id="comboValue">×0</span>
+        </div>
+      </div>
+
+      <div id="judgement" class="judgement" aria-live="polite"></div>
+
       <p id="feedback"></p>
 
-<div class="stats">
-  <p>Score: <span id="score">0</span></p>
-</div>
-      
-<div class="keyboard">
-  <button class="key white-key" data-note="C4">
-    <span>C</span>
-  </button>
+      <div class="keyboard">
+        <button class="key white-key" data-note="C4">
+          <span>C</span>
+        </button>
 
-  <button class="key black-key black-key-c-sharp" data-note="C#4">
-    <span>C♯</span>
-  </button>
+        <button
+          class="key black-key black-key-c-sharp"
+          data-note="C#4"
+        >
+          <span>C♯</span>
+        </button>
 
-  <button class="key white-key" data-note="D4">
-    <span>D</span>
-  </button>
+        <button class="key white-key" data-note="D4">
+          <span>D</span>
+        </button>
 
-  <button class="key black-key black-key-d-sharp" data-note="D#4">
-    <span>D♯</span>
-  </button>
+        <button
+          class="key black-key black-key-d-sharp"
+          data-note="D#4"
+        >
+          <span>D♯</span>
+        </button>
 
-  <button class="key white-key" data-note="E4">
-    <span>E</span>
-  </button>
+        <button class="key white-key" data-note="E4">
+          <span>E</span>
+        </button>
 
-  <button class="key white-key" data-note="F4">
-    <span>F</span>
-  </button>
+        <button class="key white-key" data-note="F4">
+          <span>F</span>
+        </button>
 
-  <button class="key black-key black-key-f-sharp" data-note="F#4">
-    <span>F♯</span>
-  </button>
+        <button
+          class="key black-key black-key-f-sharp"
+          data-note="F#4"
+        >
+          <span>F♯</span>
+        </button>
 
-  <button class="key white-key" data-note="G4">
-    <span>G</span>
-  </button>
+        <button class="key white-key" data-note="G4">
+          <span>G</span>
+        </button>
 
-  <button class="key black-key black-key-g-sharp" data-note="G#4">
-    <span>G♯</span>
-  </button>
+        <button
+          class="key black-key black-key-g-sharp"
+          data-note="G#4"
+        >
+          <span>G♯</span>
+        </button>
 
-  <button class="key white-key" data-note="A4">
-    <span>A</span>
-  </button>
+        <button class="key white-key" data-note="A4">
+          <span>A</span>
+        </button>
 
-  <button class="key black-key black-key-a-sharp" data-note="A#4">
-    <span>A♯</span>
-  </button>
+        <button
+          class="key black-key black-key-a-sharp"
+          data-note="A#4"
+        >
+          <span>A♯</span>
+        </button>
 
-  <button class="key white-key" data-note="B4">
-    <span>B</span>
-  </button>
+        <button class="key white-key" data-note="B4">
+          <span>B</span>
+        </button>
 
-  <button class="key white-key" data-note="C5">
-    <span>C</span>
-  </button>
-</div>
+        <button class="key white-key" data-note="C5">
+          <span>C</span>
+        </button>
+      </div>
     </section>
   </main>
 
