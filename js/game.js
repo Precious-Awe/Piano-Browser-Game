@@ -35,7 +35,6 @@ export function startGame() {
 
   scoreTracker.reset();
 
-  targetNote = "";
   timeLeft = GAME_DURATION;
   gameActive = true;
   noteStartTime = 0;
@@ -49,7 +48,7 @@ export function startGame() {
   chooseNewNote();
 
   timerInterval = window.setInterval(() => {
-    timeLeft--;
+    timeLeft -= 1;
 
     if (timeLeft <= 0) {
       timeLeft = 0;
@@ -77,6 +76,10 @@ function handleKeyPress(event) {
   const selectedKey = event.currentTarget;
   const selectedNote = selectedKey.dataset.note;
 
+  if (!selectedNote) {
+    return;
+  }
+
   playNote(selectedNote);
 
   if (selectedNote === targetNote) {
@@ -103,6 +106,7 @@ function updateStats() {
 
 function endGame() {
   gameActive = false;
+
   clearInterval(timerInterval);
   timerInterval = null;
 

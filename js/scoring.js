@@ -17,6 +17,7 @@ export function createScoreTracker() {
     correct++;
     combo++;
     totalReactionTime += reactionTime;
+
     score += 10 + combo;
   }
 
@@ -25,28 +26,26 @@ export function createScoreTracker() {
     combo = 0;
   }
 
-  function getAccuracy() {
+  function getStats() {
     const totalAttempts = correct + wrong;
 
-    return totalAttempts === 0
-      ? 100
-      : Math.round((correct / totalAttempts) * 100);
-  }
+    const accuracy =
+      totalAttempts === 0
+        ? 100
+        : Math.round((correct / totalAttempts) * 100);
 
-  function getAverageReactionTime() {
-    return correct === 0
-      ? "0.00"
-      : (totalReactionTime / correct / 1000).toFixed(2);
-  }
+    const averageReactionTime =
+      correct === 0
+        ? "0.00"
+        : (totalReactionTime / correct / 1000).toFixed(2);
 
-  function getStats() {
     return {
       score,
       correct,
       wrong,
       combo,
-      accuracy: getAccuracy(),
-      averageReactionTime: getAverageReactionTime()
+      accuracy,
+      averageReactionTime
     };
   }
 
