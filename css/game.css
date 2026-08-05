@@ -1,0 +1,47 @@
+.note-highway {
+  position: relative;
+  width: min(92vw, 684px);
+  height: 300px;
+  margin: 24px auto 0;
+  overflow: hidden;
+  background: linear-gradient(
+    to bottom,
+    #f7f7f7,
+    #e5e5e5
+  );
+  border: 1px solid #bcbcbc;
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+}
+
+.hit-line {
+  position: absolute;
+  right: 0;
+  bottom: 12%;
+  left: 0;
+  height: 4px;
+  background: #222222;
+}
+
+@media (max-width: 600px) {
+  .note-highway {
+    width: 96vw;
+    height: 240px;
+  }
+}
+
+.falling-note {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  width: 48px;
+  min-height: 42px;
+  padding: 8px 4px;
+  transform: translateX(-50%);
+  background: #ffffff;
+  border: 2px solid #222222;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 700;
+  z-index: 2;
+}

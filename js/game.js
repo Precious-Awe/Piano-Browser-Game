@@ -33,6 +33,7 @@ export function startGame() {
 
   renderer.showGame();
   renderer.clearFeedback();
+  renderer.createFallingNote("C4");
 
   updateStats();
   chooseNewNote();

@@ -34,6 +34,22 @@ export function createRenderer() {
     comboValueEl.textContent = `×${combo}`;
   }
 
+  function createFallingNote(noteName) {
+  const noteHighwayEl = document.getElementById("noteHighway");
+
+  const noteEl = document.createElement("div");
+  noteEl.className = "falling-note";
+  noteEl.textContent = noteName.replace("#", "♯");
+
+  noteHighwayEl.appendChild(noteEl);
+
+  return noteEl;
+}
+
+function removeFallingNote(noteEl) {
+  noteEl.remove();
+}
+
   function showGameOver({
     score,
     correct,
@@ -61,6 +77,8 @@ export function createRenderer() {
     showFeedback,
     clearFeedback,
     updateScoreboard,
-    showGameOver
+    showGameOver,
+    createFallingNote,
+    removeFallingNote
   };
 }
