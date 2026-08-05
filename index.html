@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Piano Touch Game</title>
+
   <link rel="stylesheet" href="./css/style.css" />
   <link rel="stylesheet" href="./css/game.css" />
   <link rel="stylesheet" href="./css/keyboard.css" />
@@ -13,7 +15,7 @@
   <main>
     <h1>Piano Touch Game</h1>
 
-    <button id="startBtn">Start Game</button>
+    <button id="startBtn" type="button">Start Game</button>
 
     <section id="gameArea" class="hidden">
       <p>Tap this note:</p>
@@ -41,75 +43,125 @@
         </div>
       </div>
 
-      <div id="judgement" class="judgement" aria-live="polite"></div>
+      <!-- Falling-note play area -->
+      <div
+        id="noteHighway"
+        class="note-highway"
+        aria-label="Falling note play area"
+      >
+        <div class="hit-line" aria-hidden="true"></div>
+      </div>
+
+      <div
+        id="judgement"
+        class="judgement"
+        aria-live="polite"
+      ></div>
 
       <p id="feedback"></p>
 
-      <div class="keyboard">
-        <button class="key white-key" data-note="C4">
+      <div class="keyboard" aria-label="Piano keyboard">
+        <button
+          class="key white-key"
+          type="button"
+          data-note="C4"
+        >
           <span>C</span>
         </button>
 
         <button
           class="key black-key black-key-c-sharp"
+          type="button"
           data-note="C#4"
         >
           <span>C♯</span>
         </button>
 
-        <button class="key white-key" data-note="D4">
+        <button
+          class="key white-key"
+          type="button"
+          data-note="D4"
+        >
           <span>D</span>
         </button>
 
         <button
           class="key black-key black-key-d-sharp"
+          type="button"
           data-note="D#4"
         >
           <span>D♯</span>
         </button>
 
-        <button class="key white-key" data-note="E4">
+        <button
+          class="key white-key"
+          type="button"
+          data-note="E4"
+        >
           <span>E</span>
         </button>
 
-        <button class="key white-key" data-note="F4">
+        <button
+          class="key white-key"
+          type="button"
+          data-note="F4"
+        >
           <span>F</span>
         </button>
 
         <button
           class="key black-key black-key-f-sharp"
+          type="button"
           data-note="F#4"
         >
           <span>F♯</span>
         </button>
 
-        <button class="key white-key" data-note="G4">
+        <button
+          class="key white-key"
+          type="button"
+          data-note="G4"
+        >
           <span>G</span>
         </button>
 
         <button
           class="key black-key black-key-g-sharp"
+          type="button"
           data-note="G#4"
         >
           <span>G♯</span>
         </button>
 
-        <button class="key white-key" data-note="A4">
+        <button
+          class="key white-key"
+          type="button"
+          data-note="A4"
+        >
           <span>A</span>
         </button>
 
         <button
           class="key black-key black-key-a-sharp"
+          type="button"
           data-note="A#4"
         >
           <span>A♯</span>
         </button>
 
-        <button class="key white-key" data-note="B4">
+        <button
+          class="key white-key"
+          type="button"
+          data-note="B4"
+        >
           <span>B</span>
         </button>
 
-        <button class="key white-key" data-note="C5">
+        <button
+          class="key white-key"
+          type="button"
+          data-note="C5"
+        >
           <span>C</span>
         </button>
       </div>
