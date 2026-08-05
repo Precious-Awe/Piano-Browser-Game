@@ -1,22 +1,14 @@
 import { playNote } from "./audio.js";
+import { createRenderer } from "./renderer.js";
 import { getRandomNote } from "./notes.js";
 import { createScoreTracker } from "./scoring.js";
 
 const GAME_DURATION = 30;
 
-const startBtn = document.getElementById("startBtn");
-const gameArea = document.getElementById("gameArea");
-const targetNoteEl = document.getElementById("targetNote");
-const feedbackEl = document.getElementById("feedback");
-
-const scoreValueEl = document.getElementById("scoreValue");
-const timeValueEl = document.getElementById("timeValue");
-const accuracyValueEl = document.getElementById("accuracyValue");
-const comboValueEl = document.getElementById("comboValue");
-
 const keys = document.querySelectorAll(".key");
 
 const scoreTracker = createScoreTracker();
+const renderer = createRenderer();
 
 let targetNote = "";
 let timeLeft = GAME_DURATION;
@@ -39,10 +31,8 @@ export function startGame() {
   gameActive = true;
   noteStartTime = 0;
 
-  startBtn.classList.add("hidden");
-  gameArea.classList.remove("hidden");
-
-  feedbackEl.textContent = "";
+  renderer.showGame();
+  renderer.clearFeedback();
 
   updateStats();
   chooseNewNote();
@@ -63,8 +53,7 @@ export function startGame() {
 
 function chooseNewNote() {
   targetNote = getRandomNote();
-  targetNoteEl.textContent = targetNote;
-  feedbackEl.textContent = "";
+  renderer.showTargetNote(targetNote);
   noteStartTime = performance.now();
 }
 
@@ -89,7 +78,7 @@ function handleKeyPress(event) {
     chooseNewNote();
   } else {
     scoreTracker.recordWrongAnswer();
-    feedbackEl.textContent = "Wrong note. Combo lost.";
+    renderer.showFeedback("Wrong note. Combo lost.");
   }
 
   updateStats();
@@ -98,10 +87,12 @@ function handleKeyPress(event) {
 function updateStats() {
   const stats = scoreTracker.getStats();
 
-  scoreValueEl.textContent = stats.score;
-  timeValueEl.textContent = `${timeLeft}s`;
-  accuracyValueEl.textContent = `${stats.accuracy}%`;
-  comboValueEl.textContent = `×${stats.combo}`;
+  renderer.updateScoreboard({
+    score: stats.score,
+    timeLeft,
+    accuracy: stats.accuracy,
+    combo: stats.combo
+  });
 }
 
 function endGame() {
@@ -112,16 +103,11 @@ function endGame() {
 
   const stats = scoreTracker.getStats();
 
-  targetNoteEl.textContent = "Game Over";
-
-  feedbackEl.innerHTML = `
-    Final Score: ${stats.score}<br>
-    Correct Notes: ${stats.correct}<br>
-    Wrong Notes: ${stats.wrong}<br>
-    Accuracy: ${stats.accuracy}%<br>
-    Average Reaction Time: ${stats.averageReactionTime}s
-  `;
-
-  startBtn.textContent = "Play Again";
-  startBtn.classList.remove("hidden");
+  renderer.showGameOver({
+    score: stats.score,
+    correct: stats.correct,
+    wrong: stats.wrong,
+    accuracy: stats.accuracy,
+    averageReactionTime: stats.averageReactionTime
+  });
 }
