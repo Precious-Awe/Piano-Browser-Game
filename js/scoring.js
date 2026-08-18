@@ -1,58 +1,88 @@
 export function createScoreTracker() {
   let score = 0;
-  let correct = 0;
-  let wrong = 0;
+  let perfect = 0;
+  let good = 0;
+  let miss = 0;
   let combo = 0;
-  let totalReactionTime = 0;
+  let maxCombo = 0;
+  let totalTimingError = 0;
+  let successfulHits = 0;
 
   function reset() {
     score = 0;
-    correct = 0;
-    wrong = 0;
+    perfect = 0;
+    good = 0;
+    miss = 0;
     combo = 0;
-    totalReactionTime = 0;
+    maxCombo = 0;
+    totalTimingError = 0;
+    successfulHits = 0;
   }
 
-  function recordCorrectAnswer(reactionTime) {
-    correct++;
-    combo++;
-    totalReactionTime += reactionTime;
+  function recordPerfect(timingError) {
+    perfect += 1;
+    successfulHits += 1;
+    combo += 1;
+    maxCombo = Math.max(maxCombo, combo);
 
-    score += 10 + combo;
+    totalTimingError += Math.abs(timingError);
+
+    score += 100 + combo * 2;
   }
 
-  function recordWrongAnswer() {
-    wrong++;
+  function recordGood(timingError) {
+    good += 1;
+    successfulHits += 1;
+    combo += 1;
+    maxCombo = Math.max(maxCombo, combo);
+
+    totalTimingError += Math.abs(timingError);
+
+    score += 50 + combo;
+  }
+
+  function recordMiss() {
+    miss += 1;
     combo = 0;
   }
 
   function getStats() {
-    const totalAttempts = correct + wrong;
+    const totalAttempts =
+      perfect + good + miss;
 
     const accuracy =
       totalAttempts === 0
         ? 100
-        : Math.round((correct / totalAttempts) * 100);
+        : Math.round(
+            ((perfect + good) / totalAttempts) * 100
+          );
 
-    const averageReactionTime =
-      correct === 0
+    const averageTimingError =
+      successfulHits === 0
         ? "0.00"
-        : (totalReactionTime / correct / 1000).toFixed(2);
+        : (
+            totalTimingError /
+            successfulHits /
+            1000
+          ).toFixed(2);
 
     return {
       score,
-      correct,
-      wrong,
+      perfect,
+      good,
+      miss,
       combo,
+      maxCombo,
       accuracy,
-      averageReactionTime
+      averageTimingError
     };
   }
 
   return {
     reset,
-    recordCorrectAnswer,
-    recordWrongAnswer,
+    recordPerfect,
+    recordGood,
+    recordMiss,
     getStats
   };
 }
