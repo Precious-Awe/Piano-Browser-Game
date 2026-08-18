@@ -209,3 +209,13 @@ Next
 - Song playback
 - Leaderboard
 - User testing
+
+### Timing Model
+
+Rhythm gameplay uses a scheduled hit time for each falling note.
+
+Player input is evaluated against this scheduled time rather than against
+the note's spawn time.
+
+This separates visual note appearance from the timing event that determines
+scoring and supports Perfect, Good and Miss judgement windows.

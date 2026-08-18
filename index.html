@@ -15,7 +15,9 @@
   <main>
     <h1>Piano Touch Game</h1>
 
-    <button id="startBtn" type="button">Start Game</button>
+    <button id="startBtn" type="button">
+      Start Game
+    </button>
 
     <section id="gameArea" class="hidden">
       <p>Tap this note:</p>
@@ -49,18 +51,17 @@
         class="note-highway"
         aria-label="Falling note play area"
       >
-        <div class="hit-line" aria-hidden="true"></div>
+        <div
+          class="hit-line"
+          aria-hidden="true"
+        ></div>
       </div>
 
+      <!-- Piano keyboard -->
       <div
-        id="judgement"
-        class="judgement"
-        aria-live="polite"
-      ></div>
-
-      <p id="feedback"></p>
-
-      <div class="keyboard" aria-label="Piano keyboard">
+        class="keyboard"
+        aria-label="Piano keyboard"
+      >
         <button
           class="key white-key"
           type="button"
@@ -165,6 +166,15 @@
           <span>C</span>
         </button>
       </div>
+
+      <!-- Timing judgement and player feedback -->
+      <div
+        id="judgement"
+        class="judgement"
+        aria-live="polite"
+      ></div>
+
+      <p id="feedback"></p>
     </section>
   </main>
 
