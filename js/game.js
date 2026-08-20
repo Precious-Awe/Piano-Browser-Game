@@ -27,9 +27,18 @@ let animationFrameId = null;
 let fallStartTime = 0;
 let scheduledHitTime = 0;
 
+/*
+ * Prevents the same falling note from being
+ * scored more than once.
+ */
+let noteJudged = false;
+
 export function initialiseGame() {
   keys.forEach((key) => {
-    key.addEventListener("pointerdown", handleKeyPress);
+    key.addEventListener(
+      "pointerdown",
+      handleKeyPress
+    );
   });
 }
 
@@ -39,6 +48,7 @@ export function startGame() {
 
   if (fallingNote) {
     fallingNote.remove();
+    fallingNote = null;
   }
 
   scoreTracker.reset();
@@ -46,10 +56,10 @@ export function startGame() {
   timeLeft = GAME_DURATION;
   gameActive = true;
 
-  fallingNote = null;
   animationFrameId = null;
   fallStartTime = 0;
   scheduledHitTime = 0;
+  noteJudged = false;
 
   renderer.showGame();
   renderer.clearFeedback();
@@ -80,11 +90,29 @@ function chooseNewNote() {
     fallingNote = null;
   }
 
+  cancelAnimationFrame(animationFrameId);
+  animationFrameId = null;
+
   targetNote = getRandomNote();
+
+  /*
+   * Every new note starts in an unjudged state.
+   */
+  noteJudged = false;
 
   renderer.showTargetNote(targetNote);
 
-  fallingNote = renderer.createFallingNote(targetNote);
+  fallingNote =
+    renderer.createFallingNote(targetNote);
+
+  if (!fallingNote) {
+    console.error(
+      `Could not create falling note: ${targetNote}`
+    );
+
+    return;
+  }
+
   fallingNote.setPosition(0);
 
   fallStartTime = performance.now();
@@ -92,10 +120,10 @@ function chooseNewNote() {
   scheduledHitTime =
     fallStartTime + NOTE_FALL_DURATION;
 
-  cancelAnimationFrame(animationFrameId);
-
   animationFrameId =
-    requestAnimationFrame(animateFallingNote);
+    requestAnimationFrame(
+      animateFallingNote
+    );
 }
 
 function animateFallingNote(currentTime) {
@@ -114,23 +142,33 @@ function animateFallingNote(currentTime) {
   const highwayHeight =
     renderer.getNoteHighwayHeight();
 
+  const noteHeight =
+    fallingNote.getHeight();
+
   const hitLinePosition =
-    highwayHeight * 0.88;
+    highwayHeight;
+
+  const targetY =
+    hitLinePosition - noteHeight;
 
   const yPosition =
-    progress * hitLinePosition;
+    progress * targetY;
 
   fallingNote.setPosition(yPosition);
 
   /*
-   * Once the note has passed the Good timing window,
-   * it becomes an automatic Miss.
+   * Do not automatically judge a note
+   * that has already received a judgement.
    */
-  if (currentTime > scheduledHitTime) {
-    const timingError = calculateTimingError(
-      currentTime,
-      scheduledHitTime
-    );
+  if (
+    !noteJudged &&
+    currentTime > scheduledHitTime
+  ) {
+    const timingError =
+      calculateTimingError(
+        currentTime,
+        scheduledHitTime
+      );
 
     const judgement =
       calculateJudgement(timingError);
@@ -142,16 +180,25 @@ function animateFallingNote(currentTime) {
   }
 
   animationFrameId =
-    requestAnimationFrame(animateFallingNote);
+    requestAnimationFrame(
+      animateFallingNote
+    );
 }
 
 function handleKeyPress(event) {
-  if (!gameActive || !fallingNote) {
+  if (
+    !gameActive ||
+    !fallingNote ||
+    noteJudged
+  ) {
     return;
   }
 
-  const selectedKey = event.currentTarget;
-  const selectedNote = selectedKey.dataset.note;
+  const selectedKey =
+    event.currentTarget;
+
+  const selectedNote =
+    selectedKey.dataset.note;
 
   if (!selectedNote) {
     return;
@@ -160,65 +207,84 @@ function handleKeyPress(event) {
   playNote(selectedNote);
 
   /*
-   * Pressing the wrong piano key counts as a failed
-   * attempt and resets the combo, but the falling
-   * target note remains active.
+   * Wrong key:
+   * the current note is judged once as a Miss.
    */
   if (selectedNote !== targetNote) {
+    noteJudged = true;
+
     scoreTracker.recordMiss();
 
     renderer.showJudgement("Wrong Key");
+
     renderer.showFeedback(
       "Wrong note. Combo lost."
     );
 
     updateStats();
+
+    scheduleNextNote();
     return;
   }
 
-  const playerInputTime = performance.now();
+  const playerInputTime =
+    performance.now();
 
-  const timingError = calculateTimingError(
-    playerInputTime,
-    scheduledHitTime
-  );
+  const timingError =
+    calculateTimingError(
+      playerInputTime,
+      scheduledHitTime
+    );
 
   const judgement =
     calculateJudgement(timingError);
 
   if (judgement === "Perfect") {
-    scoreTracker.recordPerfect(timingError);
+    noteJudged = true;
+
+    scoreTracker.recordPerfect(
+      timingError
+    );
 
     renderer.showJudgement("Perfect");
+
     renderer.showFeedback(
       formatTimingFeedback(timingError)
     );
 
     updateStats();
-    chooseNewNote();
+    scheduleNextNote();
 
     return;
   }
 
   if (judgement === "Good") {
-    scoreTracker.recordGood(timingError);
+    noteJudged = true;
+
+    scoreTracker.recordGood(
+      timingError
+    );
 
     renderer.showJudgement("Good");
+
     renderer.showFeedback(
       formatTimingFeedback(timingError)
     );
 
     updateStats();
-    chooseNewNote();
+    scheduleNextNote();
 
     return;
   }
 
   /*
-   * A matching key pressed too early is recorded as
-   * a Miss, but the note remains available so the
-   * player can still try to hit it at the correct time.
+   * Correct key, but outside the accepted
+   * timing window.
+   *
+   * The note is judged once as a Miss.
    */
+  noteJudged = true;
+
   scoreTracker.recordMiss();
 
   renderer.showJudgement("Miss");
@@ -230,21 +296,58 @@ function handleKeyPress(event) {
   }
 
   updateStats();
+  scheduleNextNote();
 }
 
 function registerAutomaticMiss() {
+  if (
+    !gameActive ||
+    noteJudged
+  ) {
+    return;
+  }
+
+  noteJudged = true;
+
   scoreTracker.recordMiss();
 
   renderer.showJudgement("Miss");
-  renderer.showFeedback("Note missed. Combo lost.");
+
+  renderer.showFeedback(
+    "Note missed. Combo lost."
+  );
 
   updateStats();
-  chooseNewNote();
+  scheduleNextNote();
 }
 
-function formatTimingFeedback(timingError) {
+function scheduleNextNote() {
+  cancelAnimationFrame(animationFrameId);
+  animationFrameId = null;
+
+  if (fallingNote) {
+    fallingNote.remove();
+    fallingNote = null;
+  }
+
+  /*
+   * Short delay lets the player see the
+   * judgement before the next note appears.
+   */
+  window.setTimeout(() => {
+    if (gameActive) {
+      chooseNewNote();
+    }
+  }, 250);
+}
+
+function formatTimingFeedback(
+  timingError
+) {
   const absoluteError =
-    Math.round(Math.abs(timingError));
+    Math.round(
+      Math.abs(timingError)
+    );
 
   if (timingError < 0) {
     return `${absoluteError} ms early`;
@@ -258,7 +361,8 @@ function formatTimingFeedback(timingError) {
 }
 
 function updateStats() {
-  const stats = scoreTracker.getStats();
+  const stats =
+    scoreTracker.getStats();
 
   renderer.updateScoreboard({
     score: stats.score,
@@ -274,7 +378,10 @@ function endGame() {
   clearInterval(timerInterval);
   timerInterval = null;
 
-  cancelAnimationFrame(animationFrameId);
+  cancelAnimationFrame(
+    animationFrameId
+  );
+
   animationFrameId = null;
 
   if (fallingNote) {
@@ -282,7 +389,8 @@ function endGame() {
     fallingNote = null;
   }
 
-  const stats = scoreTracker.getStats();
+  const stats =
+    scoreTracker.getStats();
 
   renderer.showGameOver({
     score: stats.score,
@@ -291,6 +399,7 @@ function endGame() {
     miss: stats.miss,
     accuracy: stats.accuracy,
     maxCombo: stats.maxCombo,
-    averageTimingError: stats.averageTimingError
+    averageTimingError:
+      stats.averageTimingError
   });
 }
