@@ -81,54 +81,62 @@ export function createRenderer() {
     comboValueEl.textContent = `×${combo}`;
   }
 
-function createFallingNote(noteName) {
-  const noteEl = document.createElement("div");
+  function createFallingNote(noteName) {
+    const noteEl =
+      document.createElement("div");
 
-  noteEl.className = "falling-note";
-  noteEl.textContent = noteName.replace("#", "♯");
+    noteEl.className = "falling-note";
+    noteEl.textContent =
+      noteName.replace("#", "♯");
 
-  const matchingKey = document.querySelector(
-    `.key[data-note="${noteName}"]`
-  );
+    const matchingKey =
+      document.querySelector(
+        `.key[data-note="${noteName}"]`
+      );
 
-  if (!matchingKey) {
-    console.error(
-      `No piano key found for falling note: ${noteName}`
-    );
+    if (!matchingKey) {
+      console.error(
+        `No piano key found for falling note: ${noteName}`
+      );
 
-    return null;
+      return null;
+    }
+
+    noteHighwayEl.appendChild(noteEl);
+
+    const highwayRect =
+      noteHighwayEl.getBoundingClientRect();
+
+    const keyRect =
+      matchingKey.getBoundingClientRect();
+
+    const keyCentre =
+      keyRect.left + keyRect.width / 2;
+
+    const horizontalPosition =
+      keyCentre - highwayRect.left;
+
+    noteEl.style.left =
+      `${horizontalPosition}px`;
+
+    function setPosition(y) {
+      noteEl.style.top = `${y}px`;
+    }
+
+    function getHeight() {
+      return noteEl.offsetHeight;
+    }
+
+    function remove() {
+      noteEl.remove();
+    }
+
+    return {
+      setPosition,
+      getHeight,
+      remove
+    };
   }
-
-  noteHighwayEl.appendChild(noteEl);
-
-  const highwayRect =
-    noteHighwayEl.getBoundingClientRect();
-
-  const keyRect =
-    matchingKey.getBoundingClientRect();
-
-  const keyCentre =
-    keyRect.left + keyRect.width / 2;
-
-  const horizontalPosition =
-    keyCentre - highwayRect.left;
-
-  noteEl.style.left =
-    `${horizontalPosition}px`;
-
-  function setPosition(y) {
-    noteEl.style.top = `${y}px`;
-  }
-
-  function remove() {
-    noteEl.remove();
-  }
-
-  return {
-    setPosition,
-    remove
-  };
-}
 
   function showGameOver({
     score,
