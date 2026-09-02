@@ -2,47 +2,106 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
   <title>Piano Touch Game</title>
 
-  <link rel="stylesheet" href="./css/style.css" />
-  <link rel="stylesheet" href="./css/game.css" />
-  <link rel="stylesheet" href="./css/keyboard.css" />
+  <link
+    rel="stylesheet"
+    href="./css/style.css"
+  />
+
+  <link
+    rel="stylesheet"
+    href="./css/game.css"
+  />
+
+  <link
+    rel="stylesheet"
+    href="./css/keyboard.css"
+  />
 </head>
 
 <body>
   <main>
     <h1>Piano Touch Game</h1>
 
-    <button id="startBtn" type="button">
+    <button
+      id="startBtn"
+      type="button"
+    >
       Start Game
     </button>
 
-    <section id="gameArea" class="hidden">
+    <section
+      id="gameArea"
+      class="hidden"
+    >
       <p>Now playing:</p>
-      <h2 id="targetNote">C4</h2>
 
+      <h2 id="targetNote">
+        Practice Song
+      </h2>
+
+      <!-- Scoreboard -->
       <div class="scoreboard">
+
         <div class="stat-card">
-          <span class="stat-label">Score</span>
-          <span class="stat-value" id="scoreValue">0</span>
+          <span class="stat-label">
+            Score
+          </span>
+
+          <span
+            class="stat-value"
+            id="scoreValue"
+          >
+            0
+          </span>
         </div>
 
         <div class="stat-card">
-          <span class="stat-label">Time</span>
-          <span class="stat-value" id="timeValue">30s</span>
+          <span class="stat-label">
+            Time
+          </span>
+
+          <span
+            class="stat-value"
+            id="timeValue"
+          >
+            30s
+          </span>
         </div>
 
         <div class="stat-card">
-          <span class="stat-label">Accuracy</span>
-          <span class="stat-value" id="accuracyValue">100%</span>
+          <span class="stat-label">
+            Accuracy
+          </span>
+
+          <span
+            class="stat-value"
+            id="accuracyValue"
+          >
+            100%
+          </span>
         </div>
 
         <div class="stat-card">
-          <span class="stat-label">Combo</span>
-          <span class="stat-value" id="comboValue">×0</span>
+          <span class="stat-label">
+            Combo
+          </span>
+
+          <span
+            class="stat-value"
+            id="comboValue"
+          >
+            ×0
+          </span>
         </div>
+
       </div>
 
       <!-- Falling-note play area -->
@@ -57,128 +116,286 @@
         ></div>
       </div>
 
-      <!-- Piano keyboard -->
+      <!--
+        Two-octave piano keyboard.
+
+        White and black keys are separated into
+        two layers.
+
+        White keys form the main keyboard layout.
+        Black keys are positioned over the white
+        keys by JavaScript.
+      -->
       <div
+        id="keyboard"
         class="keyboard"
-        aria-label="Piano keyboard"
+        aria-label="Two octave piano keyboard"
       >
-        <button
-          class="key white-key"
-          type="button"
-          data-note="C4"
-        >
-          <span>C</span>
-        </button>
 
-        <button
-          class="key black-key black-key-c-sharp"
-          type="button"
-          data-note="C#4"
-        >
-          <span>C♯</span>
-        </button>
+        <!-- =========================
+             WHITE KEY LAYER
+        ========================== -->
+        <div class="white-keys">
 
-        <button
-          class="key white-key"
-          type="button"
-          data-note="D4"
-        >
-          <span>D</span>
-        </button>
+          <!-- Octave 4 -->
 
-        <button
-          class="key black-key black-key-d-sharp"
-          type="button"
-          data-note="D#4"
-        >
-          <span>D♯</span>
-        </button>
+          <button
+            class="key white-key"
+            type="button"
+            data-note="C4"
+            aria-label="C4"
+          >
+            <span>C4</span>
+          </button>
 
-        <button
-          class="key white-key"
-          type="button"
-          data-note="E4"
-        >
-          <span>E</span>
-        </button>
+          <button
+            class="key white-key"
+            type="button"
+            data-note="D4"
+            aria-label="D4"
+          >
+            <span>D4</span>
+          </button>
 
-        <button
-          class="key white-key"
-          type="button"
-          data-note="F4"
-        >
-          <span>F</span>
-        </button>
+          <button
+            class="key white-key"
+            type="button"
+            data-note="E4"
+            aria-label="E4"
+          >
+            <span>E4</span>
+          </button>
 
-        <button
-          class="key black-key black-key-f-sharp"
-          type="button"
-          data-note="F#4"
-        >
-          <span>F♯</span>
-        </button>
+          <button
+            class="key white-key"
+            type="button"
+            data-note="F4"
+            aria-label="F4"
+          >
+            <span>F4</span>
+          </button>
 
-        <button
-          class="key white-key"
-          type="button"
-          data-note="G4"
-        >
-          <span>G</span>
-        </button>
+          <button
+            class="key white-key"
+            type="button"
+            data-note="G4"
+            aria-label="G4"
+          >
+            <span>G4</span>
+          </button>
 
-        <button
-          class="key black-key black-key-g-sharp"
-          type="button"
-          data-note="G#4"
-        >
-          <span>G♯</span>
-        </button>
+          <button
+            class="key white-key"
+            type="button"
+            data-note="A4"
+            aria-label="A4"
+          >
+            <span>A4</span>
+          </button>
 
-        <button
-          class="key white-key"
-          type="button"
-          data-note="A4"
-        >
-          <span>A</span>
-        </button>
+          <button
+            class="key white-key"
+            type="button"
+            data-note="B4"
+            aria-label="B4"
+          >
+            <span>B4</span>
+          </button>
 
-        <button
-          class="key black-key black-key-a-sharp"
-          type="button"
-          data-note="A#4"
-        >
-          <span>A♯</span>
-        </button>
+          <!-- Octave 5 -->
 
-        <button
-          class="key white-key"
-          type="button"
-          data-note="B4"
-        >
-          <span>B</span>
-        </button>
+          <button
+            class="key white-key"
+            type="button"
+            data-note="C5"
+            aria-label="C5"
+          >
+            <span>C5</span>
+          </button>
 
-        <button
-          class="key white-key"
-          type="button"
-          data-note="C5"
-        >
-          <span>C</span>
-        </button>
+          <button
+            class="key white-key"
+            type="button"
+            data-note="D5"
+            aria-label="D5"
+          >
+            <span>D5</span>
+          </button>
+
+          <button
+            class="key white-key"
+            type="button"
+            data-note="E5"
+            aria-label="E5"
+          >
+            <span>E5</span>
+          </button>
+
+          <button
+            class="key white-key"
+            type="button"
+            data-note="F5"
+            aria-label="F5"
+          >
+            <span>F5</span>
+          </button>
+
+          <button
+            class="key white-key"
+            type="button"
+            data-note="G5"
+            aria-label="G5"
+          >
+            <span>G5</span>
+          </button>
+
+          <button
+            class="key white-key"
+            type="button"
+            data-note="A5"
+            aria-label="A5"
+          >
+            <span>A5</span>
+          </button>
+
+          <button
+            class="key white-key"
+            type="button"
+            data-note="B5"
+            aria-label="B5"
+          >
+            <span>B5</span>
+          </button>
+
+        </div>
+
+        <!-- =========================
+             BLACK KEY LAYER
+        ========================== -->
+        <div class="black-keys">
+
+          <!-- Octave 4 -->
+
+          <button
+            class="key black-key"
+            type="button"
+            data-note="C#4"
+            aria-label="C sharp 4"
+          >
+            <span>C♯4</span>
+          </button>
+
+          <button
+            class="key black-key"
+            type="button"
+            data-note="D#4"
+            aria-label="D sharp 4"
+          >
+            <span>D♯4</span>
+          </button>
+
+          <button
+            class="key black-key"
+            type="button"
+            data-note="F#4"
+            aria-label="F sharp 4"
+          >
+            <span>F♯4</span>
+          </button>
+
+          <button
+            class="key black-key"
+            type="button"
+            data-note="G#4"
+            aria-label="G sharp 4"
+          >
+            <span>G♯4</span>
+          </button>
+
+          <button
+            class="key black-key"
+            type="button"
+            data-note="A#4"
+            aria-label="A sharp 4"
+          >
+            <span>A♯4</span>
+          </button>
+
+          <!-- Octave 5 -->
+
+          <button
+            class="key black-key"
+            type="button"
+            data-note="C#5"
+            aria-label="C sharp 5"
+          >
+            <span>C♯5</span>
+          </button>
+
+          <button
+            class="key black-key"
+            type="button"
+            data-note="D#5"
+            aria-label="D sharp 5"
+          >
+            <span>D♯5</span>
+          </button>
+
+          <button
+            class="key black-key"
+            type="button"
+            data-note="F#5"
+            aria-label="F sharp 5"
+          >
+            <span>F♯5</span>
+          </button>
+
+          <button
+            class="key black-key"
+            type="button"
+            data-note="G#5"
+            aria-label="G sharp 5"
+          >
+            <span>G♯5</span>
+          </button>
+
+          <button
+            class="key black-key"
+            type="button"
+            data-note="A#5"
+            aria-label="A sharp 5"
+          >
+            <span>A♯5</span>
+          </button>
+
+        </div>
       </div>
 
-      <!-- Timing judgement and player feedback -->
+      <!-- Timing judgement -->
       <div
         id="judgement"
         class="judgement"
         aria-live="polite"
       ></div>
 
-      <p id="feedback"></p>
+      <!-- Gameplay feedback -->
+      <p
+        id="feedback"
+        aria-live="polite"
+      ></p>
+
     </section>
   </main>
 
-  <script src="https://unpkg.com/tone@latest/build/Tone.js"></script>
-  <script type="module" src="./js/script.js"></script>
+  <!-- Tone.js -->
+  <script
+    src="https://unpkg.com/tone@latest/build/Tone.js"
+  ></script>
+
+  <!-- Main game entry point -->
+  <script
+    type="module"
+    src="./js/script.js"
+  ></script>
 </body>
 </html>
