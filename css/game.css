@@ -1,57 +1,251 @@
+#gameArea {
+  width: 100%;
+}
+
+#gameArea > p:first-of-type {
+  margin: 0;
+
+  text-align: center;
+
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+
+  color: #94a3b8;
+}
+
+#targetNote {
+  margin: 4px 0 18px;
+
+  text-align: center;
+
+  font-size: clamp(
+    1.3rem,
+    3vw,
+    2rem
+  );
+}
+
+/* -------------------------
+   Scoreboard
+------------------------- */
+
+.scoreboard {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 12px;
+
+  width: min(96vw, 960px);
+
+  margin: 0 auto 14px;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 76px;
+
+  padding: 10px;
+
+  background:
+    rgba(15, 23, 42, 0.88);
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.1);
+
+  border-radius: 12px;
+
+  box-shadow:
+    0 8px 20px
+    rgba(0, 0, 0, 0.24);
+}
+
+.stat-label {
+  margin-bottom: 6px;
+
+  font-size: 0.72rem;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+
+  color: #94a3b8;
+}
+
+.stat-value {
+  font-size: 1.3rem;
+  font-weight: 800;
+
+  color: #f8fafc;
+}
+
+/* -------------------------
+   Falling note highway
+------------------------- */
+
 .note-highway {
   position: relative;
-  width: min(92vw, 760px);
-  height: 300px;
-  margin: 24px auto 0;
+
+  width: min(96vw, 960px);
+  height: 320px;
+
+  margin: 0 auto;
+
   overflow: hidden;
 
-  background: linear-gradient(
-    to bottom,
-    #f7f7f7,
-    #e5e5e5
-  );
+  background:
+    linear-gradient(
+      to bottom,
+      #111827 0%,
+      #172033 55%,
+      #1e293b 100%
+    );
 
-  border: 1px solid #bcbcbc;
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-bottom: 0;
-  border-radius: 12px 12px 0 0;
+  border-radius: 14px 14px 0 0;
+}
+
+/* subtle lane guides */
+.note-highway::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background:
+    repeating-linear-gradient(
+      to right,
+      transparent 0,
+      transparent calc(7.142857% - 1px),
+      rgba(255, 255, 255, 0.05)
+        calc(7.142857% - 1px),
+      rgba(255, 255, 255, 0.05)
+        7.142857%
+    );
+
+  pointer-events: none;
 }
 
 .hit-line {
   position: absolute;
+
+  left: 0;
   right: 0;
   bottom: 0;
-  left: 0;
 
-  height: 4px;
+  height: 5px;
 
-  background: #222222;
+  background: #f8fafc;
 
-  z-index: 3;
+  box-shadow:
+    0 0 14px
+    rgba(255, 255, 255, 0.45);
+
+  z-index: 4;
 }
+
+/* -------------------------
+   Falling notes
+------------------------- */
 
 .falling-note {
   position: absolute;
   top: 0;
-  width: 48px;
-  min-height: 42px;
-  padding: 8px 4px;
 
-  transform: translateX(-50%);
+  width: 44px;
+  min-height: 38px;
 
-  background: #ffffff;
-  border: 2px solid #222222;
-  border-radius: 8px;
+  padding: 7px 5px;
 
-  text-align: center;
-  font-weight: 700;
+  transform:
+    translateX(-50%);
 
-  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #f8fafc;
+  color: #111827;
+
+  border: 2px solid #cbd5e1;
+  border-radius: 9px;
+
+  font-size: 0.8rem;
+  font-weight: 800;
+
+  box-shadow:
+    0 5px 12px
+    rgba(0, 0, 0, 0.25);
+
+  z-index: 3;
+
   will-change: top;
 }
 
-@media (max-width: 600px) {
+/* -------------------------
+   Judgement + feedback
+------------------------- */
+
+.judgement {
+  min-height: 36px;
+
+  margin-top: 16px;
+
+  text-align: center;
+
+  font-size: 1.5rem;
+  font-weight: 900;
+
+  letter-spacing: 0.05em;
+
+  color: #f8fafc;
+}
+
+#feedback {
+  min-height: 24px;
+
+  margin: 4px 0 0;
+
+  text-align: center;
+
+  color: #cbd5e1;
+}
+
+/* -------------------------
+   Mobile
+------------------------- */
+
+@media (max-width: 700px) {
+  main {
+    width: 100%;
+    padding:
+      16px 6px 28px;
+  }
+
+  .scoreboard {
+    grid-template-columns:
+      repeat(2, 1fr);
+
+    width: 98vw;
+  }
+
   .note-highway {
-    width: 96vw;
-    height: 240px;
+    width: 98vw;
+    height: 260px;
+  }
+
+  .falling-note {
+    width: 38px;
+    min-height: 34px;
+
+    font-size: 0.7rem;
   }
 }
