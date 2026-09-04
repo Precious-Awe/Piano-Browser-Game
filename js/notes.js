@@ -1,4 +1,5 @@
 export const NOTES = Object.freeze([
+  // Octave 4
   "C4",
   "C#4",
   "D4",
@@ -11,44 +12,79 @@ export const NOTES = Object.freeze([
   "A4",
   "A#4",
   "B4",
-  "C5"
+
+  // Octave 5
+  "C5",
+  "C#5",
+  "D5",
+  "D#5",
+  "E5",
+  "F5",
+  "F#5",
+  "G5",
+  "G#5",
+  "A5",
+  "A#5",
+  "B5"
 ]);
 
 export function getRandomNote() {
   const randomIndex =
-    Math.floor(Math.random() * NOTES.length);
+    Math.floor(
+      Math.random() *
+      NOTES.length
+    );
 
   return NOTES[randomIndex];
 }
 
 /*
- * First structured song chart.
+ * Beat-based song chart for Outbyte.
  *
- * `time` represents the intended hit time,
- * measured in seconds from the start of the song.
+ * `beat` identifies the musical beat on which
+ * the falling note should reach the hit line.
+ *
+ * BPM and offset are used by game.js to
+ * convert each beat into an exact hit time.
  */
-export const PRACTICE_SONG = Object.freeze({
-  id: "practice-song",
-  title: "Practice Song",
-  bpm: 120,
-  difficulty: "Easy",
+export const PRACTICE_SONG =
+  Object.freeze({
+    id: "outbyte-easy",
+    title: "Outbyte",
+    artist: "Beat Mekanik",
 
-  notes: Object.freeze([
-    { note: "C4", time: 2.0 },
-    { note: "D4", time: 3.0 },
-    { note: "E4", time: 4.0 },
-    { note: "F4", time: 5.0 },
-    { note: "G4", time: 6.0 },
-    { note: "A4", time: 7.0 },
-    { note: "B4", time: 8.0 },
-    { note: "C5", time: 9.0 },
+    bpm: 120,
 
-    { note: "B4", time: 10.0 },
-    { note: "A4", time: 11.0 },
-    { note: "G4", time: 12.0 },
-    { note: "F4", time: 13.0 },
-    { note: "E4", time: 14.0 },
-    { note: "D4", time: 15.0 },
-    { note: "C4", time: 16.0 }
-  ])
-});
+    timeSignature:
+      Object.freeze([4, 4]),
+
+    key: "A minor",
+    difficulty: "Easy",
+
+    /*
+     * Approximate time, in seconds, of the
+     * first musical beat in the backing track.
+     *
+     * We can fine-tune this by listening and
+     * testing against the actual audio.
+     */
+    offset: 1.02,
+
+    notes: Object.freeze([
+      { note: "A4", beat: 5 },
+      { note: "C5", beat: 7 },
+      { note: "E5", beat: 9 },
+
+      { note: "F4", beat: 11 },
+      { note: "A4", beat: 13 },
+      { note: "C5", beat: 15 },
+
+      { note: "G4", beat: 17 },
+      { note: "B4", beat: 19 },
+      { note: "D5", beat: 21 },
+
+      { note: "A4", beat: 23 },
+      { note: "C5", beat: 25 },
+      { note: "E5", beat: 27 }
+    ])
+  });

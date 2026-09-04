@@ -1,7 +1,14 @@
-import { playNote } from "./audio.js";
+import {
+  playNote,
+  startSong,
+  stopSong,
+  getSongTime
+} from "./audio.js";
+
 import { createRenderer } from "./renderer.js";
 import { PRACTICE_SONG } from "./notes.js";
 import { createScoreTracker } from "./scoring.js";
+
 import {
   calculateTimingError,
   calculateJudgement
@@ -10,13 +17,16 @@ import {
 const NOTE_FALL_DURATION = 2500;
 const SONG_END_BUFFER = 1000;
 
-const keys = document.querySelectorAll(".key");
+const keys =
+  document.querySelectorAll(".key");
 
-const scoreTracker = createScoreTracker();
-const renderer = createRenderer();
+const scoreTracker =
+  createScoreTracker();
+
+const renderer =
+  createRenderer();
 
 let gameActive = false;
-let songStartTime = 0;
 let animationFrameId = null;
 
 let nextNoteIndex = 0;
@@ -32,6 +42,28 @@ export function initialiseGame() {
       handleKeyPress
     );
   });
+
+  window.addEventListener(
+    "resize",
+    positionBlackKeys
+  );
+}
+
+/*
+ * Converts a musical beat number into
+ * milliseconds from the beginning of the track.
+ *
+ * Beat 1 occurs at PRACTICE_SONG.offset.
+ */
+function beatToMilliseconds(beat) {
+  const secondsPerBeat =
+    60 / PRACTICE_SONG.bpm;
+
+  const hitTimeInSeconds =
+    PRACTICE_SONG.offset +
+    (beat - 1) * secondsPerBeat;
+
+  return hitTimeInSeconds * 1000;
 }
 
 export function startGame() {
@@ -49,44 +81,164 @@ export function startGame() {
     ];
 
   songDuration =
-    finalSongNote.time * 1000 +
+    beatToMilliseconds(
+      finalSongNote.beat
+    ) +
     SONG_END_BUFFER;
 
   timeLeft =
-    Math.ceil(songDuration / 1000);
+    Math.ceil(
+      songDuration / 1000
+    );
 
   renderer.showGame();
   renderer.clearFeedback();
   renderer.clearJudgement();
 
-  /*
-   * The old target-note field is temporarily
-   * reused to display the current song title.
-   */
   renderer.showTargetNote(
     PRACTICE_SONG.title
   );
 
+  /*
+   * The keyboard was hidden before the game
+   * started, so position the black keys now
+   * that it is visible.
+   */
+  positionBlackKeys();
+
   updateStats();
 
-  songStartTime =
-    performance.now();
+  /*
+   * Start the backing track.
+   * Its audio clock becomes the master clock.
+   */
+  startSong();
 
   animationFrameId =
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(
+      gameLoop
+    );
 }
 
-function gameLoop(currentTime) {
+function positionBlackKeys() {
+  const keyboard =
+    document.getElementById(
+      "keyboard"
+    );
+
+  if (!keyboard) {
+    return;
+  }
+
+  const keyboardRect =
+    keyboard.getBoundingClientRect();
+
+  if (keyboardRect.width === 0) {
+    return;
+  }
+
+  const blackKeyMap = {
+    "C#4": ["C4", "D4"],
+    "D#4": ["D4", "E4"],
+    "F#4": ["F4", "G4"],
+    "G#4": ["G4", "A4"],
+    "A#4": ["A4", "B4"],
+
+    "C#5": ["C5", "D5"],
+    "D#5": ["D5", "E5"],
+    "F#5": ["F5", "G5"],
+    "G#5": ["G5", "A5"],
+    "A#5": ["A5", "B5"]
+  };
+
+  Object.entries(
+    blackKeyMap
+  ).forEach(
+    ([
+      blackNote,
+      neighbouringNotes
+    ]) => {
+      const [
+        leftNote,
+        rightNote
+      ] = neighbouringNotes;
+
+      const leftKey =
+        keyboard.querySelector(
+          `.white-key[data-note="${leftNote}"]`
+        );
+
+      const rightKey =
+        keyboard.querySelector(
+          `.white-key[data-note="${rightNote}"]`
+        );
+
+      const blackKey =
+        keyboard.querySelector(
+          `.black-key[data-note="${blackNote}"]`
+        );
+
+      if (
+        !leftKey ||
+        !rightKey ||
+        !blackKey
+      ) {
+        return;
+      }
+
+      const leftRect =
+        leftKey.getBoundingClientRect();
+
+      const rightRect =
+        rightKey.getBoundingClientRect();
+
+      const boundary =
+        (
+          leftRect.right +
+          rightRect.left
+        ) / 2;
+
+      const relativeBoundary =
+        boundary -
+        keyboardRect.left;
+
+      const blackKeyWidth =
+        blackKey.getBoundingClientRect()
+          .width;
+
+      blackKey.style.left =
+        `${
+          relativeBoundary -
+          blackKeyWidth / 2
+        }px`;
+    }
+  );
+}
+
+function gameLoop() {
   if (!gameActive) {
     return;
   }
 
+  /*
+   * getSongTime() returns seconds.
+   * Convert to milliseconds for the
+   * timing system.
+   */
   const elapsedTime =
-    currentTime - songStartTime;
+    getSongTime() * 1000;
 
-  spawnUpcomingNotes(elapsedTime);
-  updateActiveNotes(elapsedTime);
-  updateSongTimer(elapsedTime);
+  spawnUpcomingNotes(
+    elapsedTime
+  );
+
+  updateActiveNotes(
+    elapsedTime
+  );
+
+  updateSongTimer(
+    elapsedTime
+  );
 
   if (
     elapsedTime >= songDuration &&
@@ -97,25 +249,36 @@ function gameLoop(currentTime) {
   }
 
   animationFrameId =
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(
+      gameLoop
+    );
 }
 
-function spawnUpcomingNotes(elapsedTime) {
+function spawnUpcomingNotes(
+  elapsedTime
+) {
   while (
     nextNoteIndex <
     PRACTICE_SONG.notes.length
   ) {
     const songNote =
-      PRACTICE_SONG.notes[nextNoteIndex];
+      PRACTICE_SONG.notes[
+        nextNoteIndex
+      ];
 
     const scheduledHitTime =
-      songNote.time * 1000;
+      beatToMilliseconds(
+        songNote.beat
+      );
 
     const spawnTime =
       scheduledHitTime -
       NOTE_FALL_DURATION;
 
-    if (elapsedTime < spawnTime) {
+    if (
+      elapsedTime <
+      spawnTime
+    ) {
       break;
     }
 
@@ -150,91 +313,113 @@ function spawnSongNote(
   visualNote.setPosition(0);
 
   activeNotes.push({
-    noteName: songNote.note,
+    noteName:
+      songNote.note,
+
     scheduledHitTime,
     spawnTime,
     visualNote,
+
     judged: false
   });
 }
 
-function updateActiveNotes(elapsedTime) {
+function updateActiveNotes(
+  elapsedTime
+) {
   const highwayHeight =
     renderer.getNoteHighwayHeight();
 
-  activeNotes.forEach((activeNote) => {
-    if (activeNote.judged) {
-      return;
+  activeNotes.forEach(
+    (activeNote) => {
+      if (
+        activeNote.judged
+      ) {
+        return;
+      }
+
+      const noteHeight =
+        activeNote.visualNote
+          .getHeight();
+
+      const targetY =
+        highwayHeight -
+        noteHeight;
+
+      const noteElapsedTime =
+        elapsedTime -
+        activeNote.spawnTime;
+
+      const progress =
+        Math.min(
+          Math.max(
+            noteElapsedTime /
+              NOTE_FALL_DURATION,
+            0
+          ),
+          1
+        );
+
+      const yPosition =
+        progress *
+        targetY;
+
+      activeNote.visualNote
+        .setPosition(
+          yPosition
+        );
+
+      const timingError =
+        elapsedTime -
+        activeNote
+          .scheduledHitTime;
+
+      const judgement =
+        calculateJudgement(
+          timingError
+        );
+
+      if (
+        timingError > 0 &&
+        judgement === "Miss"
+      ) {
+        registerMiss(
+          activeNote,
+          "Note missed. Combo lost."
+        );
+      }
     }
-
-    const noteHeight =
-      activeNote.visualNote.getHeight();
-
-    const targetY =
-      highwayHeight - noteHeight;
-
-    const noteElapsedTime =
-      elapsedTime -
-      activeNote.spawnTime;
-
-    const progress = Math.min(
-      Math.max(
-        noteElapsedTime /
-          NOTE_FALL_DURATION,
-        0
-      ),
-      1
-    );
-
-    const yPosition =
-      progress * targetY;
-
-    activeNote.visualNote.setPosition(
-      yPosition
-    );
-
-    const timingError =
-      elapsedTime -
-      activeNote.scheduledHitTime;
-
-    const judgement =
-      calculateJudgement(timingError);
-
-    /*
-     * Only an overdue note can become an
-     * automatic Miss.
-     */
-    if (
-      timingError > 0 &&
-      judgement === "Miss"
-    ) {
-      registerMiss(
-        activeNote,
-        "Note missed. Combo lost."
-      );
-    }
-  });
+  );
 
   removeJudgedNotes();
 }
 
-function handleKeyPress(event) {
+function handleKeyPress(
+  event
+) {
   if (!gameActive) {
     return;
   }
 
   const selectedNote =
-    event.currentTarget.dataset.note;
+    event.currentTarget
+      .dataset.note;
 
   if (!selectedNote) {
     return;
   }
 
-  playNote(selectedNote);
+  /*
+   * The player's input supplies the
+   * live piano part.
+   */
+  playNote(
+    selectedNote
+  );
 
   const elapsedTime =
-    performance.now() -
-    songStartTime;
+    getSongTime() *
+    1000;
 
   const matchingNote =
     findClosestMatchingNote(
@@ -242,10 +427,6 @@ function handleKeyPress(event) {
       elapsedTime
     );
 
-  /*
-   * No active falling note matches
-   * the piano key that was pressed.
-   */
   if (!matchingNote) {
     scoreTracker.recordMiss();
 
@@ -258,24 +439,33 @@ function handleKeyPress(event) {
     );
 
     updateStats();
+
     return;
   }
 
   const timingError =
     calculateTimingError(
       elapsedTime,
-      matchingNote.scheduledHitTime
+      matchingNote
+        .scheduledHitTime
     );
 
   const judgement =
-    calculateJudgement(timingError);
-
-  if (judgement === "Perfect") {
-    matchingNote.judged = true;
-
-    scoreTracker.recordPerfect(
+    calculateJudgement(
       timingError
     );
+
+  if (
+    judgement ===
+    "Perfect"
+  ) {
+    matchingNote.judged =
+      true;
+
+    scoreTracker
+      .recordPerfect(
+        timingError
+      );
 
     renderer.showJudgement(
       "Perfect"
@@ -288,15 +478,21 @@ function handleKeyPress(event) {
     );
 
     updateStats();
+
     return;
   }
 
-  if (judgement === "Good") {
-    matchingNote.judged = true;
+  if (
+    judgement ===
+    "Good"
+  ) {
+    matchingNote.judged =
+      true;
 
-    scoreTracker.recordGood(
-      timingError
-    );
+    scoreTracker
+      .recordGood(
+        timingError
+      );
 
     renderer.showJudgement(
       "Good"
@@ -309,17 +505,13 @@ function handleKeyPress(event) {
     );
 
     updateStats();
+
     return;
   }
 
-  /*
-   * Correct key, but outside the
-   * accepted timing window.
-   *
-   * This is a terminal Miss.
-   */
   registerMiss(
     matchingNote,
+
     timingError < 0
       ? "Too early. Combo lost."
       : "Too late. Combo lost."
@@ -338,28 +530,32 @@ function findClosestMatchingNote(
           selectedNote
     );
 
-  if (candidates.length === 0) {
+  if (
+    candidates.length === 0
+  ) {
     return null;
   }
 
-  candidates.sort((a, b) => {
-    const differenceA =
-      Math.abs(
-        elapsedTime -
-        a.scheduledHitTime
-      );
+  candidates.sort(
+    (a, b) => {
+      const differenceA =
+        Math.abs(
+          elapsedTime -
+          a.scheduledHitTime
+        );
 
-    const differenceB =
-      Math.abs(
-        elapsedTime -
-        b.scheduledHitTime
-      );
+      const differenceB =
+        Math.abs(
+          elapsedTime -
+          b.scheduledHitTime
+        );
 
-    return (
-      differenceA -
-      differenceB
-    );
-  });
+      return (
+        differenceA -
+        differenceB
+      );
+    }
+  );
 
   return candidates[0];
 }
@@ -368,15 +564,21 @@ function registerMiss(
   activeNote,
   feedbackMessage
 ) {
-  if (activeNote.judged) {
+  if (
+    activeNote.judged
+  ) {
     return;
   }
 
-  activeNote.judged = true;
+  activeNote.judged =
+    true;
 
   scoreTracker.recordMiss();
 
-  renderer.showJudgement("Miss");
+  renderer.showJudgement(
+    "Miss"
+  );
+
   renderer.showFeedback(
     feedbackMessage
   );
@@ -388,11 +590,14 @@ function removeJudgedNotes() {
   activeNotes =
     activeNotes.filter(
       (activeNote) => {
-        if (!activeNote.judged) {
+        if (
+          !activeNote.judged
+        ) {
           return true;
         }
 
-        activeNote.visualNote.remove();
+        activeNote.visualNote
+          .remove();
 
         return false;
       }
@@ -411,11 +616,17 @@ function updateSongTimer(
 
   const newTimeLeft =
     Math.ceil(
-      remainingTime / 1000
+      remainingTime /
+        1000
     );
 
-  if (newTimeLeft !== timeLeft) {
-    timeLeft = newTimeLeft;
+  if (
+    newTimeLeft !==
+    timeLeft
+  ) {
+    timeLeft =
+      newTimeLeft;
+
     updateStats();
   }
 }
@@ -425,14 +636,20 @@ function formatTimingFeedback(
 ) {
   const absoluteError =
     Math.round(
-      Math.abs(timingError)
+      Math.abs(
+        timingError
+      )
     );
 
-  if (timingError < 0) {
+  if (
+    timingError < 0
+  ) {
     return `${absoluteError} ms early`;
   }
 
-  if (timingError > 0) {
+  if (
+    timingError > 0
+  ) {
     return `${absoluteError} ms late`;
   }
 
@@ -444,10 +661,16 @@ function updateStats() {
     scoreTracker.getStats();
 
   renderer.updateScoreboard({
-    score: stats.score,
+    score:
+      stats.score,
+
     timeLeft,
-    accuracy: stats.accuracy,
-    combo: stats.combo
+
+    accuracy:
+      stats.accuracy,
+
+    combo:
+      stats.combo
   });
 }
 
@@ -458,11 +681,15 @@ function stopCurrentGame() {
     animationFrameId
   );
 
-  animationFrameId = null;
+  animationFrameId =
+    null;
+
+  stopSong();
 
   activeNotes.forEach(
     (activeNote) => {
-      activeNote.visualNote.remove();
+      activeNote.visualNote
+        .remove();
     }
   );
 
@@ -476,11 +703,15 @@ function endGame() {
     animationFrameId
   );
 
-  animationFrameId = null;
+  animationFrameId =
+    null;
+
+  stopSong();
 
   activeNotes.forEach(
     (activeNote) => {
-      activeNote.visualNote.remove();
+      activeNote.visualNote
+        .remove();
     }
   );
 
@@ -490,12 +721,24 @@ function endGame() {
     scoreTracker.getStats();
 
   renderer.showGameOver({
-    score: stats.score,
-    perfect: stats.perfect,
-    good: stats.good,
-    miss: stats.miss,
-    accuracy: stats.accuracy,
-    maxCombo: stats.maxCombo,
+    score:
+      stats.score,
+
+    perfect:
+      stats.perfect,
+
+    good:
+      stats.good,
+
+    miss:
+      stats.miss,
+
+    accuracy:
+      stats.accuracy,
+
+    maxCombo:
+      stats.maxCombo,
+
     averageTimingError:
       stats.averageTimingError
   });

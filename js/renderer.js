@@ -57,15 +57,16 @@ export function createRenderer() {
 
     clearTimeout(judgementTimeout);
 
-    judgementTimeout = window.setTimeout(() => {
-      judgementEl.textContent = "";
-    }, 700);
+    judgementTimeout =
+      window.setTimeout(() => {
+        judgementEl.textContent = "";
+      }, 700);
   }
 
   function clearJudgement() {
     clearTimeout(judgementTimeout);
-    judgementTimeout = null;
 
+    judgementTimeout = null;
     judgementEl.textContent = "";
   }
 
@@ -76,9 +77,12 @@ export function createRenderer() {
     combo
   }) {
     scoreValueEl.textContent = score;
-    timeValueEl.textContent = `${timeLeft}s`;
-    accuracyValueEl.textContent = `${accuracy}%`;
-    comboValueEl.textContent = `×${combo}`;
+    timeValueEl.textContent =
+      `${timeLeft}s`;
+    accuracyValueEl.textContent =
+      `${accuracy}%`;
+    comboValueEl.textContent =
+      `×${combo}`;
   }
 
   function createFallingNote(noteName) {
@@ -86,9 +90,14 @@ export function createRenderer() {
       document.createElement("div");
 
     noteEl.className = "falling-note";
+
     noteEl.textContent =
       noteName.replace("#", "♯");
 
+    /*
+     * Find the actual piano key that
+     * corresponds to this falling note.
+     */
     const matchingKey =
       document.querySelector(
         `.key[data-note="${noteName}"]`
@@ -104,25 +113,46 @@ export function createRenderer() {
 
     noteHighwayEl.appendChild(noteEl);
 
+    /*
+     * Measure the highway and the actual
+     * rendered piano key.
+     */
     const highwayRect =
       noteHighwayEl.getBoundingClientRect();
 
     const keyRect =
       matchingKey.getBoundingClientRect();
 
+    /*
+     * Find the horizontal centre of the
+     * piano key.
+     */
     const keyCentre =
-      keyRect.left + keyRect.width / 2;
+      keyRect.left +
+      keyRect.width / 2;
 
+    /*
+     * Convert the screen coordinate into
+     * a coordinate relative to the highway.
+     */
     const horizontalPosition =
-      keyCentre - highwayRect.left;
+      keyCentre -
+      highwayRect.left;
 
     noteEl.style.left =
       `${horizontalPosition}px`;
 
     function setPosition(y) {
-      noteEl.style.top = `${y}px`;
+      noteEl.style.top =
+        `${y}px`;
     }
 
+    /*
+     * IMPORTANT:
+     * game.js needs the actual height of
+     * the falling note to calculate where
+     * its bottom edge reaches the hit line.
+     */
     function getHeight() {
       return noteEl.offsetHeight;
     }
@@ -149,7 +179,8 @@ export function createRenderer() {
   }) {
     clearJudgement();
 
-    targetNoteEl.textContent = "Game Over";
+    targetNoteEl.textContent =
+      "Game Over";
 
     feedbackEl.innerHTML = `
       Final Score: ${score}<br>
@@ -161,8 +192,12 @@ export function createRenderer() {
       Average Timing Error: ${averageTimingError}s
     `;
 
-    startBtn.textContent = "Play Again";
-    startBtn.classList.remove("hidden");
+    startBtn.textContent =
+      "Play Again";
+
+    startBtn.classList.remove(
+      "hidden"
+    );
   }
 
   return {
