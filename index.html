@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
 
@@ -27,8 +28,94 @@
 </head>
 
 <body>
+
   <main>
-    <h1>Piano Touch Game</h1>
+
+    <h1>
+      Piano Touch Game
+    </h1>
+
+
+    <!-- =========================
+         DIFFICULTY SELECTION
+    ========================== -->
+
+    <div class="difficulty-selector">
+
+      <p class="difficulty-title">
+        Select Difficulty
+      </p>
+
+      <div class="difficulty-options">
+
+        <label>
+          <input
+            type="radio"
+            name="difficulty"
+            value="easy"
+            checked
+          />
+
+          <span>
+            Easy
+          </span>
+        </label>
+
+
+        <label>
+          <input
+            type="radio"
+            name="difficulty"
+            value="medium"
+          />
+
+          <span>
+            Medium
+          </span>
+        </label>
+
+
+        <label>
+          <input
+            type="radio"
+            name="difficulty"
+            value="hard"
+          />
+
+          <span>
+            Hard
+          </span>
+        </label>
+
+      </div>
+
+    </div>
+
+
+    <!-- =========================
+         PLAYER DETAILS
+    ========================== -->
+
+    <div class="player-details">
+
+      <label for="playerName">
+        Player Name
+      </label>
+
+      <input
+        id="playerName"
+        type="text"
+        maxlength="20"
+        placeholder="Enter your name"
+        autocomplete="off"
+      />
+
+    </div>
+
+
+    <!-- =========================
+         START BUTTON
+    ========================== -->
 
     <button
       id="startBtn"
@@ -37,20 +124,134 @@
       Start Game
     </button>
 
+
+    <!-- =========================
+         GAME AREA
+    ========================== -->
+
     <section
       id="gameArea"
       class="hidden"
     >
-      <p>Now playing:</p>
+
+      <p>
+        Now playing:
+      </p>
 
       <h2 id="targetNote">
         Practice Song
       </h2>
 
-      <!-- Scoreboard -->
+      <!-- =========================
+     GAME OVER MODAL
+========================== -->
+
+<section
+  id="gameOverModal"
+  class="game-over-modal hidden"
+  aria-label="Game over results"
+>
+  <div class="game-over-card">
+
+    <h2>
+      Game Over
+    </h2>
+
+    <div
+      id="resultStars"
+      class="result-stars"
+    ></div>
+
+    <p
+      id="resultMessage"
+      class="result-message"
+    ></p>
+
+    <div class="result-stats">
+
+      <p>
+        Score:
+        <strong id="finalScore">
+          0
+        </strong>
+      </p>
+
+      <p>
+        Perfect:
+        <strong id="finalPerfect">
+          0
+        </strong>
+      </p>
+
+      <p>
+        Good:
+        <strong id="finalGood">
+          0
+        </strong>
+      </p>
+
+      <p>
+        Miss:
+        <strong id="finalMiss">
+          0
+        </strong>
+      </p>
+
+      <p>
+        Accuracy:
+        <strong id="finalAccuracy">
+          0%
+        </strong>
+      </p>
+
+      <p>
+        Highest Combo:
+        <strong id="finalCombo">
+          ×0
+        </strong>
+      </p>
+
+      <p>
+        Average Timing Error:
+        <strong id="finalTimingError">
+          0.00s
+        </strong>
+      </p>
+
+    </div>
+
+    <div class="game-over-actions">
+
+      <button
+        id="playAgainBtn"
+        type="button"
+      >
+        Play Again
+      </button>
+
+      <button
+        id="resultsLeaderboardBtn"
+        type="button"
+      >
+        View Leaderboard
+      </button>
+
+    </div>
+
+  </div>
+</section>
+
+      <!-- =========================
+           SCOREBOARD
+      ========================== -->
+
       <div class="scoreboard">
 
+
+        <!-- Score -->
+
         <div class="stat-card">
+
           <span class="stat-label">
             Score
           </span>
@@ -61,9 +262,14 @@
           >
             0
           </span>
+
         </div>
 
+
+        <!-- Time -->
+
         <div class="stat-card">
+
           <span class="stat-label">
             Time
           </span>
@@ -74,9 +280,14 @@
           >
             30s
           </span>
+
         </div>
 
+
+        <!-- Accuracy -->
+
         <div class="stat-card">
+
           <span class="stat-label">
             Accuracy
           </span>
@@ -87,9 +298,14 @@
           >
             100%
           </span>
+
         </div>
 
+
+        <!-- Combo -->
+
         <div class="stat-card">
+
           <span class="stat-label">
             Combo
           </span>
@@ -100,44 +316,50 @@
           >
             ×0
           </span>
+
         </div>
 
       </div>
 
-      <!-- Falling-note play area -->
+
+      <!-- =========================
+           FALLING NOTE HIGHWAY
+      ========================== -->
+
       <div
         id="noteHighway"
         class="note-highway"
         aria-label="Falling note play area"
       >
+
         <div
           class="hit-line"
           aria-hidden="true"
         ></div>
+
       </div>
 
-      <!--
-        Two-octave piano keyboard.
 
-        White and black keys are separated into
-        two layers.
+      <!-- =========================
+           TWO-OCTAVE PIANO
+      ========================== -->
 
-        White keys form the main keyboard layout.
-        Black keys are positioned over the white
-        keys by JavaScript.
-      -->
       <div
         id="keyboard"
         class="keyboard"
         aria-label="Two octave piano keyboard"
       >
 
+
         <!-- =========================
              WHITE KEY LAYER
         ========================== -->
+
         <div class="white-keys">
 
-          <!-- Octave 4 -->
+
+          <!-- OCTAVE 4 -->
+
 
           <button
             class="key white-key"
@@ -148,6 +370,7 @@
             <span>C4</span>
           </button>
 
+
           <button
             class="key white-key"
             type="button"
@@ -156,6 +379,7 @@
           >
             <span>D4</span>
           </button>
+
 
           <button
             class="key white-key"
@@ -166,6 +390,7 @@
             <span>E4</span>
           </button>
 
+
           <button
             class="key white-key"
             type="button"
@@ -174,6 +399,7 @@
           >
             <span>F4</span>
           </button>
+
 
           <button
             class="key white-key"
@@ -184,6 +410,7 @@
             <span>G4</span>
           </button>
 
+
           <button
             class="key white-key"
             type="button"
@@ -192,6 +419,7 @@
           >
             <span>A4</span>
           </button>
+
 
           <button
             class="key white-key"
@@ -202,7 +430,9 @@
             <span>B4</span>
           </button>
 
-          <!-- Octave 5 -->
+
+          <!-- OCTAVE 5 -->
+
 
           <button
             class="key white-key"
@@ -213,6 +443,7 @@
             <span>C5</span>
           </button>
 
+
           <button
             class="key white-key"
             type="button"
@@ -221,6 +452,7 @@
           >
             <span>D5</span>
           </button>
+
 
           <button
             class="key white-key"
@@ -231,6 +463,7 @@
             <span>E5</span>
           </button>
 
+
           <button
             class="key white-key"
             type="button"
@@ -239,6 +472,7 @@
           >
             <span>F5</span>
           </button>
+
 
           <button
             class="key white-key"
@@ -249,6 +483,7 @@
             <span>G5</span>
           </button>
 
+
           <button
             class="key white-key"
             type="button"
@@ -257,6 +492,7 @@
           >
             <span>A5</span>
           </button>
+
 
           <button
             class="key white-key"
@@ -269,12 +505,16 @@
 
         </div>
 
+
         <!-- =========================
              BLACK KEY LAYER
         ========================== -->
+
         <div class="black-keys">
 
-          <!-- Octave 4 -->
+
+          <!-- OCTAVE 4 -->
+
 
           <button
             class="key black-key"
@@ -285,6 +525,7 @@
             <span>C♯4</span>
           </button>
 
+
           <button
             class="key black-key"
             type="button"
@@ -293,6 +534,7 @@
           >
             <span>D♯4</span>
           </button>
+
 
           <button
             class="key black-key"
@@ -303,6 +545,7 @@
             <span>F♯4</span>
           </button>
 
+
           <button
             class="key black-key"
             type="button"
@@ -311,6 +554,7 @@
           >
             <span>G♯4</span>
           </button>
+
 
           <button
             class="key black-key"
@@ -321,7 +565,9 @@
             <span>A♯4</span>
           </button>
 
-          <!-- Octave 5 -->
+
+          <!-- OCTAVE 5 -->
+
 
           <button
             class="key black-key"
@@ -332,6 +578,7 @@
             <span>C♯5</span>
           </button>
 
+
           <button
             class="key black-key"
             type="button"
@@ -340,6 +587,7 @@
           >
             <span>D♯5</span>
           </button>
+
 
           <button
             class="key black-key"
@@ -350,6 +598,7 @@
             <span>F♯5</span>
           </button>
 
+
           <button
             class="key black-key"
             type="button"
@@ -358,6 +607,7 @@
           >
             <span>G♯5</span>
           </button>
+
 
           <button
             class="key black-key"
@@ -369,33 +619,119 @@
           </button>
 
         </div>
+
       </div>
 
-      <!-- Timing judgement -->
+
+      <!-- =========================
+           TIMING JUDGEMENT
+      ========================== -->
+
       <div
         id="judgement"
         class="judgement"
         aria-live="polite"
       ></div>
 
-      <!-- Gameplay feedback -->
+
+      <!-- =========================
+           GAMEPLAY FEEDBACK
+      ========================== -->
+
       <p
         id="feedback"
         aria-live="polite"
       ></p>
 
     </section>
+
+
+<!-- =========================
+     LEADERBOARD
+========================== -->
+
+<button
+  id="leaderboardBtn"
+  class="leaderboard-btn"
+  type="button"
+>
+  View Leaderboard
+</button>
+
+
+<section
+  id="leaderboardSection"
+  class="leaderboard-section hidden"
+  aria-label="Leaderboard"
+>
+
+  <div class="leaderboard-header">
+
+    <h2>
+      Leaderboard
+    </h2>
+
+    <button
+      id="closeLeaderboardBtn"
+      class="close-leaderboard-btn"
+      type="button"
+      aria-label="Close leaderboard"
+    >
+      ×
+    </button>
+
+  </div>
+
+
+  <p id="leaderboardDifficulty">
+    Easy Rankings
+  </p>
+
+
+  <div class="leaderboard-table-wrapper">
+
+    <table class="leaderboard-table">
+
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th>Player</th>
+          <th>Score</th>
+          <th>Accuracy</th>
+          <th>Combo</th>
+        </tr>
+      </thead>
+
+      <tbody id="leaderboardBody">
+      </tbody>
+
+    </table>
+
+  </div>
+
+</section>
+
   </main>
 
-  <!-- Tone.js -->
+
+  <!-- =========================
+       TONE.JS
+  ========================== -->
+
   <script
     src="https://unpkg.com/tone@latest/build/Tone.js"
   ></script>
 
-  <!-- Main game entry point -->
+
+  <!-- =========================
+       MAIN GAME ENTRY POINT
+  ========================== -->
+
   <script
     type="module"
     src="./js/script.js"
   ></script>
+
 </body>
+
 </html>

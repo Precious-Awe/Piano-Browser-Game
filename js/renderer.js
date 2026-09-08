@@ -29,75 +29,224 @@ export function createRenderer() {
   const comboValueEl =
     document.getElementById("comboValue");
 
+
+  /*
+   * Game Over modal elements.
+   */
+  const gameOverModalEl =
+    document.getElementById(
+      "gameOverModal"
+    );
+
+  const resultStarsEl =
+    document.getElementById(
+      "resultStars"
+    );
+
+  const resultMessageEl =
+    document.getElementById(
+      "resultMessage"
+    );
+
+  const finalScoreEl =
+    document.getElementById(
+      "finalScore"
+    );
+
+  const finalPerfectEl =
+    document.getElementById(
+      "finalPerfect"
+    );
+
+  const finalGoodEl =
+    document.getElementById(
+      "finalGood"
+    );
+
+  const finalMissEl =
+    document.getElementById(
+      "finalMiss"
+    );
+
+  const finalAccuracyEl =
+    document.getElementById(
+      "finalAccuracy"
+    );
+
+  const finalComboEl =
+    document.getElementById(
+      "finalCombo"
+    );
+
+  const finalTimingErrorEl =
+    document.getElementById(
+      "finalTimingError"
+    );
+
+  const playAgainBtn =
+    document.getElementById(
+      "playAgainBtn"
+    );
+
+  const resultsLeaderboardBtn =
+    document.getElementById(
+      "resultsLeaderboardBtn"
+    );
+
+
+  /*
+   * Leaderboard elements.
+   */
+  const leaderboardBodyEl =
+    document.getElementById(
+      "leaderboardBody"
+    );
+
+  const leaderboardDifficultyEl =
+    document.getElementById(
+      "leaderboardDifficulty"
+    );
+
+  const leaderboardSectionEl =
+    document.getElementById(
+      "leaderboardSection"
+    );
+
+  const leaderboardBtn =
+    document.getElementById(
+      "leaderboardBtn"
+    );
+
+  const closeLeaderboardBtn =
+    document.getElementById(
+      "closeLeaderboardBtn"
+    );
+
+
   let judgementTimeout = null;
+
 
   function getNoteHighwayHeight() {
     return noteHighwayEl.clientHeight;
   }
 
+
+  /*
+   * Show the main game.
+   */
   function showGame() {
-    startBtn.classList.add("hidden");
-    gameArea.classList.remove("hidden");
+    /*
+     * Make sure any previous result
+     * modal is closed before replaying.
+     */
+    closeGameOver();
+    closeLeaderboard();
+
+    startBtn.classList.add(
+      "hidden"
+    );
+
+    gameArea.classList.remove(
+      "hidden"
+    );
   }
+
 
   function showTargetNote(note) {
-    targetNoteEl.textContent = note;
+    targetNoteEl.textContent =
+      note;
   }
+
 
   function showFeedback(message) {
-    feedbackEl.textContent = message;
+    feedbackEl.textContent =
+      message;
   }
+
 
   function clearFeedback() {
-    feedbackEl.textContent = "";
+    feedbackEl.textContent =
+      "";
   }
 
-  function showJudgement(message) {
-    judgementEl.textContent = message;
 
-    clearTimeout(judgementTimeout);
+  /*
+   * Shows temporary timing feedback
+   * such as Perfect, Good or Miss.
+   */
+  function showJudgement(message) {
+    judgementEl.textContent =
+      message;
+
+    clearTimeout(
+      judgementTimeout
+    );
 
     judgementTimeout =
       window.setTimeout(() => {
-        judgementEl.textContent = "";
+        judgementEl.textContent =
+          "";
       }, 700);
   }
 
-  function clearJudgement() {
-    clearTimeout(judgementTimeout);
 
-    judgementTimeout = null;
-    judgementEl.textContent = "";
+  function clearJudgement() {
+    clearTimeout(
+      judgementTimeout
+    );
+
+    judgementTimeout =
+      null;
+
+    judgementEl.textContent =
+      "";
   }
 
+
+  /*
+   * Updates the live scoreboard.
+   */
   function updateScoreboard({
     score,
     timeLeft,
     accuracy,
     combo
   }) {
-    scoreValueEl.textContent = score;
+    scoreValueEl.textContent =
+      score;
+
     timeValueEl.textContent =
       `${timeLeft}s`;
+
     accuracyValueEl.textContent =
       `${accuracy}%`;
+
     comboValueEl.textContent =
       `×${combo}`;
   }
 
-  function createFallingNote(noteName) {
-    const noteEl =
-      document.createElement("div");
 
-    noteEl.className = "falling-note";
+  /*
+   * Creates one falling note and aligns
+   * it horizontally with its piano key.
+   */
+  function createFallingNote(
+    noteName
+  ) {
+    const noteEl =
+      document.createElement(
+        "div"
+      );
+
+    noteEl.className =
+      "falling-note";
 
     noteEl.textContent =
-      noteName.replace("#", "♯");
+      noteName.replace(
+        "#",
+        "♯"
+      );
 
-    /*
-     * Find the actual piano key that
-     * corresponds to this falling note.
-     */
     const matchingKey =
       document.querySelector(
         `.key[data-note="${noteName}"]`
@@ -111,30 +260,22 @@ export function createRenderer() {
       return null;
     }
 
-    noteHighwayEl.appendChild(noteEl);
+    noteHighwayEl.appendChild(
+      noteEl
+    );
 
-    /*
-     * Measure the highway and the actual
-     * rendered piano key.
-     */
     const highwayRect =
-      noteHighwayEl.getBoundingClientRect();
+      noteHighwayEl
+        .getBoundingClientRect();
 
     const keyRect =
-      matchingKey.getBoundingClientRect();
+      matchingKey
+        .getBoundingClientRect();
 
-    /*
-     * Find the horizontal centre of the
-     * piano key.
-     */
     const keyCentre =
       keyRect.left +
       keyRect.width / 2;
 
-    /*
-     * Convert the screen coordinate into
-     * a coordinate relative to the highway.
-     */
     const horizontalPosition =
       keyCentre -
       highwayRect.left;
@@ -142,24 +283,22 @@ export function createRenderer() {
     noteEl.style.left =
       `${horizontalPosition}px`;
 
+
     function setPosition(y) {
       noteEl.style.top =
         `${y}px`;
     }
 
-    /*
-     * IMPORTANT:
-     * game.js needs the actual height of
-     * the falling note to calculate where
-     * its bottom edge reaches the hit line.
-     */
+
     function getHeight() {
       return noteEl.offsetHeight;
     }
 
+
     function remove() {
       noteEl.remove();
     }
+
 
     return {
       setPosition,
@@ -167,6 +306,174 @@ export function createRenderer() {
       remove
     };
   }
+
+
+  /*
+   * =============================
+   * LEADERBOARD
+   * =============================
+   */
+
+
+  function openLeaderboard() {
+    if (!leaderboardSectionEl) {
+      return;
+    }
+
+    leaderboardSectionEl
+      .classList.remove(
+        "hidden"
+      );
+  }
+
+
+  function closeLeaderboard() {
+    if (!leaderboardSectionEl) {
+      return;
+    }
+
+    leaderboardSectionEl
+      .classList.add(
+        "hidden"
+      );
+  }
+
+
+  function showLeaderboard(
+    entries,
+    difficulty
+  ) {
+    if (
+      !leaderboardBodyEl ||
+      !leaderboardDifficultyEl
+    ) {
+      console.error(
+        "Leaderboard elements were not found in index.html."
+      );
+
+      return;
+    }
+
+    leaderboardBodyEl.textContent =
+      "";
+
+    leaderboardDifficultyEl.textContent =
+      `${difficulty} Rankings`;
+
+
+    if (entries.length === 0) {
+      const row =
+        document.createElement(
+          "tr"
+        );
+
+      const cell =
+        document.createElement(
+          "td"
+        );
+
+      cell.colSpan = 5;
+
+      cell.textContent =
+        "No scores yet. Be the first!";
+
+      row.appendChild(
+        cell
+      );
+
+      leaderboardBodyEl
+        .appendChild(
+          row
+        );
+
+      return;
+    }
+
+
+    entries.forEach(
+      (entry, index) => {
+        const row =
+          document.createElement(
+            "tr"
+          );
+
+        const rankCell =
+          document.createElement(
+            "td"
+          );
+
+        const playerCell =
+          document.createElement(
+            "td"
+          );
+
+        const scoreCell =
+          document.createElement(
+            "td"
+          );
+
+        const accuracyCell =
+          document.createElement(
+            "td"
+          );
+
+        const comboCell =
+          document.createElement(
+            "td"
+          );
+
+
+        rankCell.textContent =
+          index + 1;
+
+        playerCell.textContent =
+          entry.playerName;
+
+        scoreCell.textContent =
+          entry.score;
+
+        accuracyCell.textContent =
+          `${entry.accuracy}%`;
+
+        comboCell.textContent =
+          `×${entry.maxCombo}`;
+
+
+        row.append(
+          rankCell,
+          playerCell,
+          scoreCell,
+          accuracyCell,
+          comboCell
+        );
+
+        leaderboardBodyEl
+          .appendChild(
+            row
+          );
+      }
+    );
+  }
+
+
+  /*
+   * =============================
+   * GAME OVER MODAL
+   * =============================
+   */
+
+
+  function closeGameOver() {
+    if (!gameOverModalEl) {
+      return;
+    }
+
+    gameOverModalEl
+      .classList.add(
+        "hidden"
+      );
+  }
+
 
   function showGameOver({
     score,
@@ -179,26 +486,145 @@ export function createRenderer() {
   }) {
     clearJudgement();
 
-    targetNoteEl.textContent =
-      "Game Over";
+    /*
+     * Live gameplay feedback should
+     * not remain underneath the modal.
+     */
+    clearFeedback();
 
-    feedbackEl.innerHTML = `
-      Final Score: ${score}<br>
-      Perfect: ${perfect}<br>
-      Good: ${good}<br>
-      Miss: ${miss}<br>
-      Accuracy: ${accuracy}%<br>
-      Highest Combo: ×${maxCombo}<br>
-      Average Timing Error: ${averageTimingError}s
-    `;
 
-    startBtn.textContent =
-      "Play Again";
+    /*
+     * Calculate star rating.
+     */
+    let stars = "⭐";
 
-    startBtn.classList.remove(
-      "hidden"
-    );
+    let performanceMessage =
+      "Keep practising!";
+
+
+    if (accuracy >= 85) {
+      stars =
+        "⭐⭐⭐";
+
+      performanceMessage =
+        "Excellent Performance!";
+    } else if (
+      accuracy >= 60
+    ) {
+      stars =
+        "⭐⭐";
+
+      performanceMessage =
+        "Great Effort!";
+    }
+
+
+    resultStarsEl.textContent =
+      stars;
+
+    resultMessageEl.textContent =
+      performanceMessage;
+
+    finalScoreEl.textContent =
+      score;
+
+    finalPerfectEl.textContent =
+      perfect;
+
+    finalGoodEl.textContent =
+      good;
+
+    finalMissEl.textContent =
+      miss;
+
+    finalAccuracyEl.textContent =
+      `${accuracy}%`;
+
+    finalComboEl.textContent =
+      `×${maxCombo}`;
+
+    finalTimingErrorEl.textContent =
+      `${averageTimingError}s`;
+
+
+    /*
+     * Show the results modal.
+     */
+    gameOverModalEl
+      .classList.remove(
+        "hidden"
+      );
   }
+
+
+  /*
+   * =============================
+   * BUTTON EVENTS
+   * =============================
+   */
+
+
+  /*
+   * Normal View Leaderboard button.
+   */
+  if (leaderboardBtn) {
+    leaderboardBtn
+      .addEventListener(
+        "click",
+        openLeaderboard
+      );
+  }
+
+
+  /*
+   * Leaderboard close button.
+   */
+  if (closeLeaderboardBtn) {
+    closeLeaderboardBtn
+      .addEventListener(
+        "click",
+        closeLeaderboard
+      );
+  }
+
+
+  /*
+   * Play Again button inside
+   * the Game Over modal.
+   */
+  if (playAgainBtn) {
+    playAgainBtn
+      .addEventListener(
+        "click",
+        () => {
+          closeGameOver();
+
+          /*
+           * Reuse the existing Start Game
+           * button behaviour from script.js.
+           */
+          startBtn.click();
+        }
+      );
+  }
+
+
+  /*
+   * View Leaderboard button inside
+   * the Game Over modal.
+   */
+  if (resultsLeaderboardBtn) {
+    resultsLeaderboardBtn
+      .addEventListener(
+        "click",
+        () => {
+          closeGameOver();
+
+          openLeaderboard();
+        }
+      );
+  }
+
 
   return {
     showGame,
@@ -210,6 +636,7 @@ export function createRenderer() {
     updateScoreboard,
     createFallingNote,
     getNoteHighwayHeight,
+    showLeaderboard,
     showGameOver
   };
 }
