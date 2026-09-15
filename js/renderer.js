@@ -31,8 +31,11 @@ export function createRenderer() {
 
 
   /*
-   * Game Over modal elements.
+   * =============================
+   * GAME OVER ELEMENTS
+   * =============================
    */
+
   const gameOverModalEl =
     document.getElementById(
       "gameOverModal"
@@ -95,8 +98,11 @@ export function createRenderer() {
 
 
   /*
-   * Leaderboard elements.
+   * =============================
+   * LEADERBOARD ELEMENTS
+   * =============================
    */
+
   const leaderboardBodyEl =
     document.getElementById(
       "leaderboardBody"
@@ -126,45 +132,64 @@ export function createRenderer() {
   let judgementTimeout = null;
 
 
+  /*
+   * =============================
+   * GAME DISPLAY
+   * =============================
+   */
+
   function getNoteHighwayHeight() {
+    if (!noteHighwayEl) {
+      return 0;
+    }
+
     return noteHighwayEl.clientHeight;
   }
 
 
-  /*
-   * Show the main game.
-   */
   function showGame() {
-    /*
-     * Make sure any previous result
-     * modal is closed before replaying.
-     */
     closeGameOver();
     closeLeaderboard();
 
-    startBtn.classList.add(
-      "hidden"
-    );
+    if (startBtn) {
+      startBtn.classList.add(
+        "hidden"
+      );
+    }
 
-    gameArea.classList.remove(
-      "hidden"
-    );
+    if (gameArea) {
+      gameArea.classList.remove(
+        "hidden"
+      );
+    }
   }
 
 
   function showTargetNote(note) {
+    if (!targetNoteEl) {
+      return;
+    }
+
     targetNoteEl.textContent =
       note;
   }
 
 
   function showFeedback(message) {
+    if (!feedbackEl) {
+      return;
+    }
+
     feedbackEl.textContent =
       message;
   }
 
 
   function clearFeedback() {
+    if (!feedbackEl) {
+      return;
+    }
+
     feedbackEl.textContent =
       "";
   }
@@ -175,6 +200,10 @@ export function createRenderer() {
    * such as Perfect, Good or Miss.
    */
   function showJudgement(message) {
+    if (!judgementEl) {
+      return;
+    }
+
     judgementEl.textContent =
       message;
 
@@ -198,59 +227,79 @@ export function createRenderer() {
     judgementTimeout =
       null;
 
-    judgementEl.textContent =
-      "";
+    if (judgementEl) {
+      judgementEl.textContent =
+        "";
+    }
   }
 
 
   /*
-   * Updates the live scoreboard.
+   * =============================
+   * SCOREBOARD
+   * =============================
    */
+
   function updateScoreboard({
     score,
     timeLeft,
     accuracy,
     combo
   }) {
-    scoreValueEl.textContent =
-      score;
+    if (scoreValueEl) {
+      scoreValueEl.textContent =
+        score;
+    }
 
-    timeValueEl.textContent =
-      `${timeLeft}s`;
+    if (timeValueEl) {
+      timeValueEl.textContent =
+        `${timeLeft}s`;
+    }
 
-    accuracyValueEl.textContent =
-      `${accuracy}%`;
+    if (accuracyValueEl) {
+      accuracyValueEl.textContent =
+        `${accuracy}%`;
+    }
 
-    comboValueEl.textContent =
-      `×${combo}`;
+    if (comboValueEl) {
+      comboValueEl.textContent =
+        `×${combo}`;
+    }
   }
 
 
   /*
-   * Creates one falling note and aligns
-   * it horizontally with its piano key.
+   * =============================
+   * FALLING NOTES
+   * =============================
+   *
+   * Creates one falling note and
+   * horizontally aligns it with the
+   * centre of its corresponding
+   * piano key.
    */
+
   function createFallingNote(
     noteName
   ) {
-    const noteEl =
-      document.createElement(
-        "div"
+    if (!noteHighwayEl) {
+      console.error(
+        "Note highway element was not found."
       );
 
-    noteEl.className =
-      "falling-note";
+      return null;
+    }
 
-    noteEl.textContent =
-      noteName.replace(
-        "#",
-        "♯"
-      );
 
+    /*
+     * Find the corresponding
+     * piano key first.
+     */
     const matchingKey =
       document.querySelector(
         `.key[data-note="${noteName}"]`
       );
+
 
     if (!matchingKey) {
       console.error(
@@ -260,9 +309,101 @@ export function createRenderer() {
       return null;
     }
 
+
+    /*
+     * Create the visual falling note.
+     */
+    const noteEl =
+      document.createElement(
+        "div"
+      );
+
+    noteEl.className =
+      "falling-note";
+
+
+    /*
+     * =============================
+     * NOTE COLOUR SYSTEM
+     * =============================
+     *
+     * Colour is based on pitch class.
+     * This means the same musical
+     * pitch receives the same colour
+     * in octave 4 and octave 5.
+     */
+
+    const pitchClass =
+      noteName.replace(
+        /\d/g,
+        ""
+      );
+
+
+    const noteColourClasses = {
+      C: "note-blue",
+      "C#": "note-blue",
+
+      D: "note-cyan",
+      "D#": "note-cyan",
+
+      E: "note-green",
+
+      F: "note-purple",
+      "F#": "note-purple",
+
+      G: "note-pink",
+      "G#": "note-pink",
+
+      A: "note-orange",
+      "A#": "note-orange",
+
+      B: "note-yellow"
+    };
+
+
+    const colourClass =
+      noteColourClasses[
+        pitchClass
+      ];
+
+
+    if (colourClass) {
+      noteEl.classList.add(
+        colourClass
+      );
+    }
+
+
+    /*
+     * Display sharps using the
+     * musical sharp symbol.
+     */
+    noteEl.textContent =
+      noteName.replace(
+        "#",
+        "♯"
+      );
+
+
+    /*
+     * Add the note before measuring
+     * its position.
+     */
     noteHighwayEl.appendChild(
       noteEl
     );
+
+
+    /*
+     * =============================
+     * HORIZONTAL ALIGNMENT
+     * =============================
+     *
+     * Calculate the centre of the
+     * matching piano key relative
+     * to the note highway.
+     */
 
     const highwayRect =
       noteHighwayEl
@@ -280,9 +421,15 @@ export function createRenderer() {
       keyCentre -
       highwayRect.left;
 
+
     noteEl.style.left =
       `${horizontalPosition}px`;
 
+
+    /*
+     * game.js controls vertical
+     * movement using these methods.
+     */
 
     function setPosition(y) {
       noteEl.style.top =
@@ -313,7 +460,6 @@ export function createRenderer() {
    * LEADERBOARD
    * =============================
    */
-
 
   function openLeaderboard() {
     if (!leaderboardSectionEl) {
@@ -354,6 +500,7 @@ export function createRenderer() {
       return;
     }
 
+
     leaderboardBodyEl.textContent =
       "";
 
@@ -361,6 +508,9 @@ export function createRenderer() {
       `${difficulty} Rankings`;
 
 
+    /*
+     * Empty leaderboard.
+     */
     if (entries.length === 0) {
       const row =
         document.createElement(
@@ -390,6 +540,9 @@ export function createRenderer() {
     }
 
 
+    /*
+     * Populate leaderboard rows.
+     */
     entries.forEach(
       (entry, index) => {
         const row =
@@ -447,6 +600,7 @@ export function createRenderer() {
           comboCell
         );
 
+
         leaderboardBodyEl
           .appendChild(
             row
@@ -461,7 +615,6 @@ export function createRenderer() {
    * GAME OVER MODAL
    * =============================
    */
-
 
   function closeGameOver() {
     if (!gameOverModalEl) {
@@ -485,18 +638,26 @@ export function createRenderer() {
     averageTimingError
   }) {
     clearJudgement();
-
-    /*
-     * Live gameplay feedback should
-     * not remain underneath the modal.
-     */
     clearFeedback();
 
 
+    if (!gameOverModalEl) {
+      console.error(
+        "Game Over modal was not found in index.html."
+      );
+
+      return;
+    }
+
+
     /*
-     * Calculate star rating.
+     * =============================
+     * STAR RATING
+     * =============================
      */
-    let stars = "⭐";
+
+    let stars =
+      "⭐";
 
     let performanceMessage =
       "Keep practising!";
@@ -519,36 +680,58 @@ export function createRenderer() {
     }
 
 
-    resultStarsEl.textContent =
-      stars;
+    /*
+     * Populate result information.
+     */
 
-    resultMessageEl.textContent =
-      performanceMessage;
+    if (resultStarsEl) {
+      resultStarsEl.textContent =
+        stars;
+    }
 
-    finalScoreEl.textContent =
-      score;
+    if (resultMessageEl) {
+      resultMessageEl.textContent =
+        performanceMessage;
+    }
 
-    finalPerfectEl.textContent =
-      perfect;
+    if (finalScoreEl) {
+      finalScoreEl.textContent =
+        score;
+    }
 
-    finalGoodEl.textContent =
-      good;
+    if (finalPerfectEl) {
+      finalPerfectEl.textContent =
+        perfect;
+    }
 
-    finalMissEl.textContent =
-      miss;
+    if (finalGoodEl) {
+      finalGoodEl.textContent =
+        good;
+    }
 
-    finalAccuracyEl.textContent =
-      `${accuracy}%`;
+    if (finalMissEl) {
+      finalMissEl.textContent =
+        miss;
+    }
 
-    finalComboEl.textContent =
-      `×${maxCombo}`;
+    if (finalAccuracyEl) {
+      finalAccuracyEl.textContent =
+        `${accuracy}%`;
+    }
 
-    finalTimingErrorEl.textContent =
-      `${averageTimingError}s`;
+    if (finalComboEl) {
+      finalComboEl.textContent =
+        `×${maxCombo}`;
+    }
+
+    if (finalTimingErrorEl) {
+      finalTimingErrorEl.textContent =
+        `${averageTimingError}s`;
+    }
 
 
     /*
-     * Show the results modal.
+     * Display Game Over modal.
      */
     gameOverModalEl
       .classList.remove(
@@ -565,7 +748,7 @@ export function createRenderer() {
 
 
   /*
-   * Normal View Leaderboard button.
+   * Main View Leaderboard button.
    */
   if (leaderboardBtn) {
     leaderboardBtn
@@ -577,7 +760,7 @@ export function createRenderer() {
 
 
   /*
-   * Leaderboard close button.
+   * Close leaderboard button.
    */
   if (closeLeaderboardBtn) {
     closeLeaderboardBtn
@@ -591,6 +774,9 @@ export function createRenderer() {
   /*
    * Play Again button inside
    * the Game Over modal.
+   *
+   * Reuses the existing Start Game
+   * behaviour from script.js.
    */
   if (playAgainBtn) {
     playAgainBtn
@@ -599,11 +785,9 @@ export function createRenderer() {
         () => {
           closeGameOver();
 
-          /*
-           * Reuse the existing Start Game
-           * button behaviour from script.js.
-           */
-          startBtn.click();
+          if (startBtn) {
+            startBtn.click();
+          }
         }
       );
   }
@@ -619,12 +803,17 @@ export function createRenderer() {
         "click",
         () => {
           closeGameOver();
-
           openLeaderboard();
         }
       );
   }
 
+
+  /*
+   * =============================
+   * PUBLIC RENDERER METHODS
+   * =============================
+   */
 
   return {
     showGame,

@@ -5,7 +5,10 @@ import {
 
 import {
   playNote,
+  loadSong,
   startSong,
+  pauseSong,
+  resumeSong,
   stopSong,
   getSongTime
 } from "./audio.js";
@@ -15,7 +18,7 @@ import {
 } from "./renderer.js";
 
 import {
-  PRACTICE_SONG
+  getSongById
 } from "./notes.js";
 
 import {
@@ -38,6 +41,12 @@ const keys =
   );
 
 
+const pauseBtn =
+  document.getElementById(
+    "pauseBtn"
+  );
+
+
 const scoreTracker =
   createScoreTracker();
 
@@ -47,6 +56,8 @@ const renderer =
 
 
 let gameActive = false;
+
+let gamePaused = false;
 
 let animationFrameId =
   null;
@@ -65,6 +76,13 @@ let timeLeft = 0;
 let selectedDifficulty =
   "easy";
 
+let selectedSongId =
+  "outbyte";
+
+
+let currentSong =
+  null;
+
 let currentSongNotes = [];
 
 
@@ -81,6 +99,18 @@ export function initialiseGame() {
       );
     }
   );
+
+
+  /*
+   * Connect the Pause / Resume button
+   * to the game.
+   */
+  if (pauseBtn) {
+    pauseBtn.addEventListener(
+      "click",
+      togglePauseGame
+    );
+  }
 
 
   window.addEventListener(
@@ -135,21 +165,27 @@ export function initialiseGame() {
 /*
  * Converts a musical beat number
  * into milliseconds from the
- * beginning of the track.
+ * beginning of the currently
+ * selected track.
  *
- * Beat 1 occurs at
- * PRACTICE_SONG.offset.
+ * Each song can have its own BPM
+ * and timing offset.
  */
 function beatToMilliseconds(
   beat
 ) {
+  if (!currentSong) {
+    return 0;
+  }
+
+
   const secondsPerBeat =
     60 /
-    PRACTICE_SONG.bpm;
+    currentSong.bpm;
 
 
   const hitTimeInSeconds =
-    PRACTICE_SONG.offset +
+    currentSong.offset +
     (beat - 1) *
       secondsPerBeat;
 
@@ -162,11 +198,28 @@ function beatToMilliseconds(
 
 
 /*
+ * Reads the song selected by
+ * the player.
+ */
+function getSelectedSongId() {
+  const selectedOption =
+    document.querySelector(
+      'input[name="song"]:checked'
+    );
+
+
+  if (!selectedOption) {
+    return "outbyte";
+  }
+
+
+  return selectedOption.value;
+}
+
+
+/*
  * Reads the difficulty selected
  * by the player.
- *
- * Easy is used as a safe default
- * if no difficulty has been selected.
  */
 function getSelectedDifficulty() {
   const selectedOption =
@@ -227,11 +280,7 @@ function formatDifficulty(
 /*
  * Starts a new game.
  */
-export function startGame() {
-  /*
-   * Require a player name before
-   * starting the game.
-   */
+export async function startGame() {
   const playerName =
     getPlayerName();
 
@@ -251,11 +300,31 @@ export function startGame() {
   scoreTracker.reset();
 
 
-  gameActive = true;
-
   nextNoteIndex = 0;
 
   activeNotes = [];
+
+
+  /*
+   * Read the player's selected song.
+   */
+  selectedSongId =
+    getSelectedSongId();
+
+
+  currentSong =
+    getSongById(
+      selectedSongId
+    );
+
+
+  if (!currentSong) {
+    console.error(
+      `Song not found: ${selectedSongId}`
+    );
+
+    return;
+  }
 
 
   /*
@@ -267,39 +336,83 @@ export function startGame() {
 
 
   /*
-   * Load the correct note chart
-   * for the selected difficulty.
+   * Retrieve the appropriate chart
+   * from the selected song.
    */
   currentSongNotes =
-    PRACTICE_SONG
+    currentSong
       .difficulties[
         selectedDifficulty
       ];
 
 
   /*
-   * Safety check in case an invalid
-   * difficulty is somehow selected.
+   * Shadows Behind Neon and
+   * Galactic Spiritual Journey
+   * currently have empty charts.
+   *
+   * Do not start their audio until
+   * those charts have been created.
    */
   if (
     !currentSongNotes ||
     currentSongNotes.length === 0
   ) {
-    console.error(
-      `No song chart found for difficulty: ${selectedDifficulty}`
+    console.warn(
+      `No ${selectedDifficulty} chart has been created for ${currentSong.title} yet.`
     );
 
 
-    gameActive = false;
+    alert(
+      `${currentSong.title} is not ready to play yet.`
+    );
+
 
     return;
   }
 
 
   /*
-   * The duration of the game is
-   * based on the final note in
-   * the selected chart.
+   * Load the backing track belonging
+   * to the selected song.
+   *
+   * audio.js will avoid unnecessarily
+   * loading the same file again.
+   */
+  try {
+    await loadSong(
+      currentSong.audioPath
+    );
+  } catch (error) {
+    console.error(
+      "Could not load selected song:",
+      error
+    );
+
+
+    alert(
+      "The selected song could not be loaded."
+    );
+
+
+    return;
+  }
+
+
+  /*
+   * The game only becomes active once
+   * the chart and audio are ready.
+   */
+  gameActive = true;
+
+  gamePaused = false;
+
+  updatePauseButton();
+
+
+  /*
+   * Determine the game duration from
+   * the final note in this song's chart.
    */
   const finalSongNote =
     currentSongNotes[
@@ -329,28 +442,30 @@ export function startGame() {
   renderer.clearJudgement();
 
 
-  /*
-   * Show song title and difficulty.
-   *
-   * Example:
-   * Outbyte — Easy
-   */
   const formattedDifficulty =
     formatDifficulty(
       selectedDifficulty
     );
 
 
+  /*
+   * Example:
+   *
+   * Outbyte — Easy
+   *
+   * Later:
+   *
+   * Shadows Behind Neon — Medium
+   */
   renderer.showTargetNote(
-    `${PRACTICE_SONG.title} — ${formattedDifficulty}`
+    `${currentSong.title} — ${formattedDifficulty}`
   );
 
 
   /*
    * The keyboard was hidden before
    * the game started, so position
-   * the black keys now that it is
-   * visible.
+   * the black keys once it is visible.
    */
   positionBlackKeys();
 
@@ -361,8 +476,9 @@ export function startGame() {
   /*
    * Start the backing track.
    *
-   * Its audio clock becomes the
-   * master clock.
+   * The backing track's audio clock
+   * becomes the master clock for the
+   * scheduler and falling notes.
    */
   startSong();
 
@@ -540,20 +656,21 @@ function positionBlackKeys() {
  * Main animation loop.
  *
  * The backing track's audio clock
- * is used as the master clock
- * for gameplay.
+ * is the master gameplay clock.
  */
 function gameLoop() {
-  if (!gameActive) {
+  /*
+   * Stop the animation loop while
+   * the game is inactive or paused.
+   */
+  if (
+    !gameActive ||
+    gamePaused
+  ) {
     return;
   }
 
 
-  /*
-   * getSongTime() returns seconds.
-   * Convert to milliseconds for
-   * the timing system.
-   */
   const elapsedTime =
     getSongTime() *
     1000;
@@ -594,7 +711,7 @@ function gameLoop() {
 
 /*
  * Spawns notes from the currently
- * selected difficulty chart.
+ * selected song and difficulty chart.
  */
 function spawnUpcomingNotes(
   elapsedTime
@@ -642,8 +759,7 @@ function spawnUpcomingNotes(
 
 /*
  * Creates a visual falling note
- * and adds it to the list of
- * active notes.
+ * and adds it to the active list.
  */
 function spawnSongNote(
   songNote,
@@ -761,8 +877,8 @@ function updateActiveNotes(
 
 
       /*
-       * Automatically register a
-       * Miss once the late timing
+       * Automatically register a Miss
+       * once the accepted late timing
        * window has passed.
        */
       if (
@@ -788,7 +904,17 @@ function updateActiveNotes(
 function handleKeyPress(
   event
 ) {
-  if (!gameActive) {
+  /*
+   * Keyboard input is ignored when
+   * the game is inactive or paused.
+   *
+   * This prevents players from
+   * changing their score during Pause.
+   */
+  if (
+    !gameActive ||
+    gamePaused
+  ) {
     return;
   }
 
@@ -803,19 +929,11 @@ function handleKeyPress(
   }
 
 
-  /*
-   * The player's input supplies
-   * the live piano part.
-   */
   playNote(
     selectedNote
   );
 
 
-  /*
-   * Use the same audio clock that
-   * drives the falling notes.
-   */
   const elapsedTime =
     getSongTime() *
     1000;
@@ -942,12 +1060,8 @@ function handleKeyPress(
 
 
   /*
-   * A matching note was pressed
-   * outside the accepted timing
-   * window.
-   *
-   * This is terminal: the player
-   * cannot retry the same note.
+   * Matching note was pressed outside
+   * the accepted timing window.
    */
   registerMiss(
     matchingNote,
@@ -960,9 +1074,8 @@ function handleKeyPress(
 
 
 /*
- * Finds the closest currently
- * active note matching the piano
- * key pressed.
+ * Finds the closest active note
+ * matching the piano key pressed.
  */
 function findClosestMatchingNote(
   selectedNote,
@@ -1170,12 +1283,162 @@ function updateStats() {
 
 
 /*
+ * Toggles the game between
+ * Pause and Resume.
+ */
+function togglePauseGame() {
+  if (!gameActive) {
+    return;
+  }
+
+
+  if (gamePaused) {
+    resumeGame();
+  } else {
+    pauseGame();
+  }
+}
+
+
+/*
+ * Pauses the entire game.
+ *
+ * The backing track is paused first.
+ * This freezes the audio-based master
+ * clock used by the game scheduler.
+ *
+ * The animation frame is then cancelled
+ * so the falling notes and countdown
+ * remain frozen on screen.
+ */
+function pauseGame() {
+  if (
+    !gameActive ||
+    gamePaused
+  ) {
+    return;
+  }
+
+
+  pauseSong();
+
+
+  gamePaused = true;
+
+
+  if (
+    animationFrameId !==
+    null
+  ) {
+    cancelAnimationFrame(
+      animationFrameId
+    );
+  }
+
+
+  animationFrameId =
+    null;
+
+
+  updatePauseButton();
+
+
+  renderer.showJudgement(
+    "Paused"
+  );
+
+
+  renderer.showFeedback(
+    "Game paused. Press Resume to continue."
+  );
+}
+
+
+/*
+ * Resumes the entire game from
+ * exactly the same position.
+ *
+ * audio.js resumes the backing track
+ * from its saved playback position.
+ *
+ * The animation loop then continues
+ * using the resumed audio clock.
+ */
+function resumeGame() {
+  if (
+    !gameActive ||
+    !gamePaused
+  ) {
+    return;
+  }
+
+
+  resumeSong();
+
+
+  gamePaused = false;
+
+
+  updatePauseButton();
+
+
+  renderer.clearJudgement();
+
+  renderer.clearFeedback();
+
+
+  animationFrameId =
+    requestAnimationFrame(
+      gameLoop
+    );
+}
+
+
+/*
+ * Updates the Pause button so that
+ * the interface reflects the current
+ * game state.
+ */
+function updatePauseButton() {
+  if (!pauseBtn) {
+    return;
+  }
+
+
+  if (gamePaused) {
+    pauseBtn.textContent =
+      "Resume";
+
+
+    pauseBtn.setAttribute(
+      "aria-label",
+      "Resume game"
+    );
+  } else {
+    pauseBtn.textContent =
+      "Pause";
+
+
+    pauseBtn.setAttribute(
+      "aria-label",
+      "Pause game"
+    );
+  }
+}
+
+
+/*
  * Stops any game that is
  * currently running before
  * a new one begins.
  */
 function stopCurrentGame() {
   gameActive = false;
+
+  gamePaused = false;
+
+
+  updatePauseButton();
 
 
   if (
@@ -1217,6 +1480,11 @@ function stopCurrentGame() {
 function endGame() {
   gameActive = false;
 
+  gamePaused = false;
+
+
+  updatePauseButton();
+
 
   if (
     animationFrameId !==
@@ -1256,11 +1524,14 @@ function endGame() {
 
 
   /*
-   * Save the completed result.
+   * Save completed result.
    *
-   * leaderboard.js determines
-   * whether this is a new
-   * personal best.
+   * For now the leaderboard remains
+   * separated by difficulty.
+   *
+   * We can decide later whether song
+   * should also become a leaderboard
+   * category.
    */
   saveLeaderboardEntry({
     playerName,
@@ -1279,11 +1550,6 @@ function endGame() {
   });
 
 
-  /*
-   * Refresh the leaderboard for
-   * the difficulty that was just
-   * played.
-   */
   const formattedDifficulty =
     formatDifficulty(
       selectedDifficulty
@@ -1299,10 +1565,6 @@ function endGame() {
   );
 
 
-  /*
-   * Display the final game
-   * statistics.
-   */
   renderer.showGameOver({
     score:
       stats.score,

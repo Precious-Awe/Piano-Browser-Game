@@ -1,261 +1,438 @@
+// ==================================================
+// LEADERBOARD
+// ==================================================
+//
+// Scores are separated by:
+//
+// 1. Song
+// 2. Difficulty
+//
+// Example:
+//
+// outbyte
+//   easy
+//   medium
+//   hard
+//
+// shadows-behind-neon
+//   easy
+//   medium
+//   hard
+//
+// galactic-spiritual-journey
+//   easy
+//   medium
+//   hard
+//
+// Only the player's BEST score is retained
+// for each song/difficulty combination.
+//
+// Player names are compared case-insensitively.
+//
+// Maximum:
+// Top 10 players per song/difficulty.
+// ==================================================
+
+
 const STORAGE_KEY =
-  "pianoTouchLeaderboard";
-
-const MAX_ENTRIES = 10;
+  "pianoTouchLeaderboardV2";
 
 
-/*
- * Reads all leaderboard entries
- * from localStorage.
- */
-function getAllLeaderboardEntries() {
+const MAX_ENTRIES =
+  10;
+
+
+// ==================================================
+// READ ALL LEADERBOARD DATA
+// ==================================================
+
+function loadLeaderboardData() {
+
   try {
+
     const storedData =
       localStorage.getItem(
         STORAGE_KEY
       );
 
+
     if (!storedData) {
-      return [];
+
+      return {};
+
     }
+
 
     const parsedData =
       JSON.parse(
         storedData
       );
 
-    if (!Array.isArray(parsedData)) {
-      return [];
+
+    if (
+      !parsedData ||
+      typeof parsedData !==
+        "object"
+    ) {
+
+      return {};
+
     }
 
+
     return parsedData;
+
   } catch (error) {
+
     console.error(
-      "Could not load leaderboard:",
+      "Could not read leaderboard:",
       error
     );
 
-    return [];
+
+    return {};
+
   }
 }
 
 
-/*
- * Writes leaderboard data
- * to localStorage.
- */
-function saveAllLeaderboardEntries(
-  entries
+// ==================================================
+// SAVE ALL LEADERBOARD DATA
+// ==================================================
+
+function saveLeaderboardData(
+  leaderboardData
 ) {
+
   try {
+
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify(entries)
+      JSON.stringify(
+        leaderboardData
+      )
     );
 
-    return true;
   } catch (error) {
+
     console.error(
       "Could not save leaderboard:",
       error
     );
 
-    return false;
   }
 }
 
 
-/*
- * Saves a player's best result.
- *
- * Each player can only have one
- * entry per difficulty.
- *
- * If the player already exists,
- * their result is only updated
- * when their score improves.
- */
+// ==================================================
+// NORMALISE PLAYER NAME
+// ==================================================
+
+function normalisePlayerName(
+  playerName
+) {
+
+  return playerName
+    .trim()
+    .toLowerCase();
+}
+
+
+// ==================================================
+// GET LEADERBOARD
+// ==================================================
+
+export function getLeaderboard(
+  songId,
+  difficulty
+) {
+
+  if (
+    !songId ||
+    !difficulty
+  ) {
+
+    return [];
+
+  }
+
+
+  const leaderboardData =
+    loadLeaderboardData();
+
+
+  const songData =
+    leaderboardData[
+      songId
+    ];
+
+
+  if (!songData) {
+
+    return [];
+
+  }
+
+
+  const entries =
+    songData[
+      difficulty
+    ];
+
+
+  if (
+    !Array.isArray(
+      entries
+    )
+  ) {
+
+    return [];
+
+  }
+
+
+  return [
+    ...entries
+  ].sort(
+    (a, b) =>
+      b.score -
+      a.score
+  );
+}
+
+
+// ==================================================
+// SAVE LEADERBOARD ENTRY
+// ==================================================
+
 export function saveLeaderboardEntry({
   playerName,
+  songId,
   difficulty,
   score,
   accuracy,
   maxCombo
 }) {
-  const cleanName =
-    playerName.trim();
 
-  if (!cleanName) {
-    return {
-      saved: false,
-      newBest: false
-    };
-  }
+  if (
+    !playerName ||
+    !songId ||
+    !difficulty
+  ) {
 
-  if (score <= 0) {
-  return {
-    saved: false,
-    newBest: false
-  };
-}
-
-const leaderboard =
-  getAllLeaderboardEntries();
-
-  /*
-   * Player names are compared
-   * case-insensitively.
-   *
-   * "Solo" and "solo" are therefore
-   * treated as the same player.
-   */
-  const existingIndex =
-    leaderboard.findIndex(
-      (entry) =>
-        entry.difficulty ===
-          difficulty &&
-        entry.playerName
-          .trim()
-          .toLowerCase() ===
-        cleanName.toLowerCase()
+    console.warn(
+      "Leaderboard entry was not saved because required information was missing."
     );
 
-  /*
-   * First score for this player
-   * on this difficulty.
-   */
-  if (existingIndex === -1) {
-    leaderboard.push({
-      playerName: cleanName,
-      difficulty,
-      score,
-      accuracy,
-      maxCombo,
-      date:
-        new Date()
-          .toLocaleDateString(
-            "en-GB"
-          )
-    });
+    return;
 
-    saveAllLeaderboardEntries(
-      leaderboard
-    );
-
-    return {
-      saved: true,
-      newBest: true
-    };
   }
 
-  const existingEntry =
-    leaderboard[
-      existingIndex
+
+  const leaderboardData =
+    loadLeaderboardData();
+
+
+  // ----------------------------------------------
+  // Create song section if required.
+  // ----------------------------------------------
+
+  if (
+    !leaderboardData[
+      songId
+    ]
+  ) {
+
+    leaderboardData[
+      songId
+    ] = {};
+
+  }
+
+
+  // ----------------------------------------------
+  // Create difficulty section if required.
+  // ----------------------------------------------
+
+  if (
+    !Array.isArray(
+      leaderboardData[
+        songId
+      ][
+        difficulty
+      ]
+    )
+  ) {
+
+    leaderboardData[
+      songId
+    ][
+      difficulty
+    ] = [];
+
+  }
+
+
+  const entries =
+    leaderboardData[
+      songId
+    ][
+      difficulty
     ];
 
-  /*
-   * Do not replace the player's
-   * personal best with a lower
-   * or equal score.
-   */
+
+  const normalisedName =
+    normalisePlayerName(
+      playerName
+    );
+
+
+  // ----------------------------------------------
+  // Find an existing entry for this player.
+  //
+  // Solomon and SOLOMON should be treated
+  // as the same player.
+  // ----------------------------------------------
+
+  const existingEntryIndex =
+    entries.findIndex(
+      (entry) => {
+
+        if (
+          !entry.playerName
+        ) {
+
+          return false;
+
+        }
+
+
+        return (
+          normalisePlayerName(
+            entry.playerName
+          ) ===
+          normalisedName
+        );
+
+      }
+    );
+
+
+  const newEntry = {
+
+    playerName:
+      playerName.trim(),
+
+    score:
+      Number(
+        score
+      ) || 0,
+
+    accuracy:
+      Number(
+        accuracy
+      ) || 0,
+
+    maxCombo:
+      Number(
+        maxCombo
+      ) || 0
+
+  };
+
+
+  // ----------------------------------------------
+  // Existing player.
+  //
+  // Only replace their entry if their new
+  // score is better than their old one.
+  // ----------------------------------------------
+
   if (
-    score <=
-    existingEntry.score
+    existingEntryIndex !==
+    -1
   ) {
-    return {
-      saved: false,
-      newBest: false
-    };
+
+    const existingEntry =
+      entries[
+        existingEntryIndex
+      ];
+
+
+    if (
+      newEntry.score >
+      existingEntry.score
+    ) {
+
+      entries[
+        existingEntryIndex
+      ] =
+        newEntry;
+
+    }
+
+  } else {
+
+    // New player.
+
+    entries.push(
+      newEntry
+    );
+
   }
 
-  /*
-   * The player has beaten their
-   * previous best.
-   */
-  leaderboard[
-    existingIndex
-  ] = {
-    ...existingEntry,
 
-    playerName: cleanName,
-    score,
-    accuracy,
-    maxCombo,
+  // ----------------------------------------------
+  // Highest score first.
+  // ----------------------------------------------
 
-    date:
-      new Date()
-        .toLocaleDateString(
-          "en-GB"
-        )
-  };
-
-  saveAllLeaderboardEntries(
-    leaderboard
+  entries.sort(
+    (a, b) =>
+      b.score -
+      a.score
   );
 
-  return {
-    saved: true,
-    newBest: true
-  };
-}
 
+  // ----------------------------------------------
+  // Keep only the top 10.
+  // ----------------------------------------------
 
-/*
- * Returns the top 10 DIFFERENT
- * players for one difficulty.
- */
-export function getLeaderboard(
-  difficulty
-) {
-  const leaderboard =
-    getAllLeaderboardEntries();
-
-  return leaderboard
-    .filter(
-      (entry) =>
-        entry.difficulty ===
-        difficulty
-    )
-    .sort(
-      (a, b) => {
-        /*
-         * Highest score first.
-         */
-        if (
-          b.score !==
-          a.score
-        ) {
-          return (
-            b.score -
-            a.score
-          );
-        }
-
-        /*
-         * Accuracy breaks a tie.
-         */
-        if (
-          b.accuracy !==
-          a.accuracy
-        ) {
-          return (
-            b.accuracy -
-            a.accuracy
-          );
-        }
-
-        /*
-         * Highest combo is the
-         * final tie-breaker.
-         */
-        return (
-          b.maxCombo -
-          a.maxCombo
-        );
-      }
-    )
-    .slice(
+  leaderboardData[
+    songId
+  ][
+    difficulty
+  ] =
+    entries.slice(
       0,
       MAX_ENTRIES
     );
+
+
+  saveLeaderboardData(
+    leaderboardData
+  );
+}
+
+
+// ==================================================
+// OPTIONAL CLEAR FUNCTION
+// ==================================================
+
+export function clearLeaderboard() {
+
+  try {
+
+    localStorage.removeItem(
+      STORAGE_KEY
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Could not clear leaderboard:",
+      error
+    );
+
+  }
+
 }
