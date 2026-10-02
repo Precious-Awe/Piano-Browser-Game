@@ -86,29 +86,51 @@
  * Half width = 3.75%
  */
 
-/* Between C and D */
-.black-key-c-sharp {
-  left: calc(12.5% - 3.75%);
+/*
+ * Two-octave keyboard: 14 white keys
+ * (C4-B4, C5-B5), each 100/14%.
+ * Positioned by data-note since the
+ * markup has no per-note class.
+ */
+
+.black-key[data-note="C#4"] {
+  left: calc((100% / 14) * 1 - 1.9%);
 }
 
-/* Between D and E */
-.black-key-d-sharp {
-  left: calc(25% - 3.75%);
+.black-key[data-note="D#4"] {
+  left: calc((100% / 14) * 2 - 1.9%);
 }
 
-/* Between F and G */
-.black-key-f-sharp {
-  left: calc(50% - 3.75%);
+.black-key[data-note="F#4"] {
+  left: calc((100% / 14) * 4 - 1.9%);
 }
 
-/* Between G and A */
-.black-key-g-sharp {
-  left: calc(62.5% - 3.75%);
+.black-key[data-note="G#4"] {
+  left: calc((100% / 14) * 5 - 1.9%);
 }
 
-/* Between A and B */
-.black-key-a-sharp {
-  left: calc(75% - 3.75%);
+.black-key[data-note="A#4"] {
+  left: calc((100% / 14) * 6 - 1.9%);
+}
+
+.black-key[data-note="C#5"] {
+  left: calc((100% / 14) * 8 - 1.9%);
+}
+
+.black-key[data-note="D#5"] {
+  left: calc((100% / 14) * 9 - 1.9%);
+}
+
+.black-key[data-note="F#5"] {
+  left: calc((100% / 14) * 11 - 1.9%);
+}
+
+.black-key[data-note="G#5"] {
+  left: calc((100% / 14) * 12 - 1.9%);
+}
+
+.black-key[data-note="A#5"] {
+  left: calc((100% / 14) * 13 - 1.9%);
 }
 
 /* -------------------------

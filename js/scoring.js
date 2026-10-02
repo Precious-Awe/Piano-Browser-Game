@@ -6,7 +6,10 @@ export function createScoreTracker() {
   let combo = 0;
   let maxCombo = 0;
   let totalTimingError = 0;
+  let totalSignedTimingError = 0;
   let successfulHits = 0;
+  let holdsCompleted = 0;
+  let holdsBroken = 0;
 
   function reset() {
     score = 0;
@@ -16,7 +19,10 @@ export function createScoreTracker() {
     combo = 0;
     maxCombo = 0;
     totalTimingError = 0;
+    totalSignedTimingError = 0;
     successfulHits = 0;
+    holdsCompleted = 0;
+    holdsBroken = 0;
   }
 
   function recordPerfect(timingError) {
@@ -26,6 +32,7 @@ export function createScoreTracker() {
     maxCombo = Math.max(maxCombo, combo);
 
     totalTimingError += Math.abs(timingError);
+    totalSignedTimingError += timingError;
 
     score += 100 + combo * 2;
   }
@@ -37,6 +44,7 @@ export function createScoreTracker() {
     maxCombo = Math.max(maxCombo, combo);
 
     totalTimingError += Math.abs(timingError);
+    totalSignedTimingError += timingError;
 
     score += 50 + combo;
   }
@@ -44,6 +52,22 @@ export function createScoreTracker() {
   function recordMiss() {
     miss += 1;
     combo = 0;
+  }
+
+
+  /*
+   * Long notes score for their length,
+   * on top of the hit that started them.
+   */
+  function recordHoldComplete(holdMs) {
+    holdsCompleted += 1;
+
+    score += Math.round(holdMs / 50);
+  }
+
+
+  function recordHoldBreak() {
+    holdsBroken += 1;
   }
 
   function getStats() {
@@ -66,7 +90,21 @@ export function createScoreTracker() {
             1000
           ).toFixed(2);
 
+    /*
+     * Positive = the player hits late
+     * on average, negative = early.
+     */
+    const averageSignedTimingError =
+      successfulHits === 0
+        ? 0
+        : totalSignedTimingError /
+          successfulHits;
+
     return {
+      successfulHits,
+      holdsCompleted,
+      holdsBroken,
+      averageSignedTimingError,
       score,
       perfect,
       good,
@@ -83,6 +121,8 @@ export function createScoreTracker() {
     recordPerfect,
     recordGood,
     recordMiss,
+    recordHoldComplete,
+    recordHoldBreak,
     getStats
   };
 }

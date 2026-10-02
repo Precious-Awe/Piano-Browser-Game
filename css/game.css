@@ -298,6 +298,13 @@
 .falling-note {
   position: absolute;
 
+  /*
+   * Tiles are moved with transform,
+   * which does not re-lay out the page.
+   */
+  top: 0;
+  will-change: transform;
+
   width: 44px;
   min-height: 38px;
 
@@ -337,8 +344,7 @@
     );
 
   box-shadow:
-    0 0 8px rgba(56, 189, 248, 0.9),
-    0 0 18px rgba(37, 99, 235, 0.65);
+    0 0 6px rgba(56, 189, 248, 0.9);
 }
 
 
@@ -351,8 +357,7 @@
     );
 
   box-shadow:
-    0 0 8px rgba(103, 232, 249, 0.9),
-    0 0 18px rgba(8, 145, 178, 0.65);
+    0 0 6px rgba(103, 232, 249, 0.9);
 }
 
 
@@ -365,8 +370,7 @@
     );
 
   box-shadow:
-    0 0 8px rgba(134, 239, 172, 0.9),
-    0 0 18px rgba(22, 163, 74, 0.65);
+    0 0 6px rgba(134, 239, 172, 0.9);
 }
 
 
@@ -379,8 +383,7 @@
     );
 
   box-shadow:
-    0 0 8px rgba(192, 132, 252, 0.9),
-    0 0 18px rgba(124, 58, 237, 0.7);
+    0 0 6px rgba(192, 132, 252, 0.9);
 }
 
 
@@ -393,8 +396,7 @@
     );
 
   box-shadow:
-    0 0 8px rgba(244, 114, 182, 0.9),
-    0 0 18px rgba(219, 39, 119, 0.65);
+    0 0 6px rgba(244, 114, 182, 0.9);
 }
 
 
@@ -407,8 +409,7 @@
     );
 
   box-shadow:
-    0 0 8px rgba(251, 191, 36, 0.95),
-    0 0 18px rgba(234, 88, 12, 0.7);
+    0 0 6px rgba(251, 191, 36, 0.95);
 }
 
 
@@ -421,8 +422,7 @@
     );
 
   box-shadow:
-    0 0 8px rgba(253, 224, 71, 0.9),
-    0 0 18px rgba(202, 138, 4, 0.65);
+    0 0 6px rgba(253, 224, 71, 0.9);
 }
 
 
@@ -1527,6 +1527,104 @@
 
 
 /* ---------------------------------------------------------
+   Long notes
+--------------------------------------------------------- */
+
+/*
+ * A long note is a tall tile. Its label
+ * sits at the bottom, by the hit line,
+ * and the tail above it shows how long
+ * the key stays down.
+ */
+.falling-note {
+  align-items: flex-end;
+}
+
+
+.falling-note.hold {
+  /*
+   * The tail fades towards its far end,
+   * so the head reading the hit line is
+   * the brightest part.
+   */
+  -webkit-mask-image:
+    linear-gradient(
+      to top,
+      #000 0,
+      #000 34px,
+      rgba(0, 0, 0, 0.72) 100%
+    );
+
+  mask-image:
+    linear-gradient(
+      to top,
+      #000 0,
+      #000 34px,
+      rgba(0, 0, 0, 0.72) 100%
+    );
+}
+
+
+/*
+ * A cap on the far end of the tail: the
+ * key is released once this passes the
+ * line.
+ */
+.falling-note.hold::after {
+  content: "";
+
+  position: absolute;
+
+  top: 4px;
+  left: 20%;
+  right: 20%;
+
+  height: 3px;
+
+  background:
+    rgba(255, 255, 255, 0.95);
+
+  border-radius: 3px;
+}
+
+
+.falling-note.holding {
+  border-color: #ffffff;
+
+  animation:
+    hold-pulse 0.5s ease-in-out infinite;
+}
+
+
+@keyframes hold-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 8px
+      rgba(255, 255, 255, 0.6);
+  }
+
+  50% {
+    box-shadow:
+      0 0 16px
+      rgba(255, 255, 255, 0.95);
+  }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+
+  .falling-note.holding {
+    animation: none;
+
+    box-shadow:
+      0 0 12px
+      rgba(255, 255, 255, 0.9);
+  }
+
+}
+
+
+/* ---------------------------------------------------------
    Falling notes
 --------------------------------------------------------- */
 
@@ -1543,9 +1641,14 @@
 
   font-size: 0.92rem;
 
+  /*
+   * A single small glow: tiles move
+   * every frame, and wide blurs are
+   * expensive to repaint.
+   */
   box-shadow:
-    0 0 12px
-    rgba(255, 255, 255, 0.16);
+    0 0 6px
+    rgba(255, 255, 255, 0.14);
 }
 
 
@@ -1687,4 +1790,493 @@
       repeat(2, 1fr);
   }
 
+}
+
+/* ---------------------------------------------------------
+   Audio offset
+--------------------------------------------------------- */
+
+#audioOffsetValue {
+  color: #f8fafc;
+
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+
+#audioOffset {
+  width: 100%;
+  max-width: 440px;
+
+  accent-color: #a855f7;
+
+  cursor: pointer;
+}
+
+
+.audio-offset-hint {
+  max-width: 440px;
+
+  margin:
+    6px 0 0;
+
+  color: #64748b;
+
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+
+.offset-suggestion {
+  margin:
+    0 0 16px;
+
+  padding: 12px;
+
+  border:
+    1px solid
+    rgba(168, 85, 247, 0.4);
+
+  border-radius: 10px;
+
+  background:
+    rgba(168, 85, 247, 0.08);
+}
+
+
+.offset-suggestion p {
+  margin:
+    0 0 10px;
+
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+
+.offset-suggestion button {
+  padding: 9px 16px;
+
+  border: none;
+  border-radius: 9px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+}
+
+
+/* ---------------------------------------------------------
+   Welcome screen
+--------------------------------------------------------- */
+
+.welcome {
+  position: relative;
+
+  width: min(94vw, 960px);
+
+  margin: 0 auto 28px;
+
+  padding: 10px 0 4px;
+
+  text-align: center;
+}
+
+
+/*
+ * Tiles drifting down behind the text,
+ * like the ones in the game.
+ */
+
+.welcome-tiles {
+  /*
+   * Behind the whole page, so the tiles
+   * drift past without ever sitting on
+   * top of the text.
+   */
+  position: fixed;
+
+  inset: 0;
+
+  pointer-events: none;
+
+  z-index: -1;
+}
+
+
+.welcome-tile {
+  position: absolute;
+  top: -60px;
+
+  width: 34px;
+  height: 34px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.85);
+
+  border-radius: 8px;
+
+  opacity: 0;
+
+  animation:
+    welcome-drift 11s linear infinite;
+}
+
+
+.welcome-tile:nth-child(1) {
+  left: 7%;
+  animation-delay: 0s;
+  background:
+    linear-gradient(180deg, #38bdf8, #2563eb);
+}
+
+.welcome-tile:nth-child(2) {
+  left: 21%;
+  animation-delay: 1.5s;
+  background:
+    linear-gradient(180deg, #f472b6, #db2777);
+}
+
+.welcome-tile:nth-child(3) {
+  left: 35%;
+  animation-delay: 3s;
+  background:
+    linear-gradient(180deg, #86efac, #16a34a);
+}
+
+.welcome-tile:nth-child(4) {
+  left: 58%;
+  animation-delay: 4.5s;
+  background:
+    linear-gradient(180deg, #fdba74, #ea580c);
+}
+
+.welcome-tile:nth-child(5) {
+  left: 74%;
+  animation-delay: 6s;
+  background:
+    linear-gradient(180deg, #67e8f9, #0891b2);
+}
+
+.welcome-tile:nth-child(6) {
+  left: 90%;
+  animation-delay: 7.5s;
+  background:
+    linear-gradient(180deg, #fde047, #ca8a04);
+}
+
+
+@keyframes welcome-drift {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 0;
+  }
+
+  12% {
+    opacity: 0.4;
+  }
+
+  85% {
+    opacity: 0.14;
+  }
+
+  100% {
+    transform:
+      translateY(105vh) rotate(12deg);
+    opacity: 0;
+  }
+}
+
+
+/*
+ * The welcome content fades up, one
+ * piece after another.
+ */
+
+.welcome > *:not(.welcome-tiles) {
+  position: relative;
+  z-index: 1;
+
+  animation:
+    welcome-rise 0.6s ease-out both;
+}
+
+
+.welcome-tagline { animation-delay: 0.05s; }
+.welcome-steps   { animation-delay: 0.15s; }
+.welcome-play    { animation-delay: 0.45s; }
+.welcome-note    { animation-delay: 0.6s; }
+
+
+@keyframes welcome-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+.welcome-step {
+  animation:
+    welcome-rise 0.6s ease-out both;
+}
+
+.welcome-step:nth-child(1) { animation-delay: 0.2s; }
+.welcome-step:nth-child(2) { animation-delay: 0.32s; }
+.welcome-step:nth-child(3) { animation-delay: 0.44s; }
+
+
+/*
+ * The Play button keeps a slow glow so
+ * it is obvious what to press.
+ */
+
+.welcome-play {
+  animation:
+    welcome-rise 0.6s ease-out both,
+    welcome-pulse 2.4s ease-in-out 1s infinite;
+}
+
+
+@keyframes welcome-pulse {
+  0%, 100% {
+    box-shadow:
+      0 0 14px
+      rgba(217, 70, 239, 0.35);
+  }
+
+  50% {
+    box-shadow:
+      0 0 26px
+      rgba(217, 70, 239, 0.75);
+  }
+}
+
+
+/*
+ * Anyone who prefers less motion gets
+ * the screen without the movement.
+ */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .welcome-tiles {
+    display: none;
+  }
+
+  .welcome > *:not(.welcome-tiles),
+  .welcome-step,
+  .welcome-play {
+    animation: none;
+  }
+
+}
+
+
+.welcome-tagline {
+  max-width: 540px;
+
+  margin: 0 auto 26px;
+
+  color: #cbd5f5;
+
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+
+.welcome-steps {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 14px;
+
+  margin-bottom: 26px;
+
+  text-align: left;
+}
+
+
+.welcome-step {
+  padding: 18px;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(30, 41, 59, 0.85),
+      rgba(15, 23, 42, 0.85)
+    );
+
+  border:
+    1px solid
+    rgba(148, 163, 184, 0.28);
+
+  border-radius: 14px;
+}
+
+
+.welcome-step-number {
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width: 28px;
+  height: 28px;
+
+  margin-bottom: 10px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #a855f7,
+      #7c3aed
+    );
+
+  border-radius: 50%;
+
+  color: #ffffff;
+
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+
+.welcome-step h2 {
+  margin: 0 0 8px;
+
+  color: #f8fafc;
+
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+
+.welcome-step p {
+  margin: 0;
+
+  color: #94a3b8;
+
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+
+.welcome-play {
+  min-width: 200px;
+
+  padding: 15px 28px;
+
+  background:
+    linear-gradient(
+      180deg,
+      #d946ef,
+      #7c3aed
+    );
+
+  border:
+    1px solid
+    rgba(217, 70, 239, 0.65);
+
+  border-radius: 11px;
+
+  color: #ffffff;
+
+  font-size: 1.05rem;
+  font-weight: 800;
+
+  letter-spacing: 0.04em;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+
+.welcome-play:hover {
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 0 20px
+    rgba(217, 70, 239, 0.5);
+}
+
+
+.welcome-note {
+  max-width: 460px;
+
+  margin: 18px auto 0;
+
+  color: #64748b;
+
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+
+@media (max-width: 760px) {
+
+  .welcome-steps {
+    grid-template-columns: 1fr;
+  }
+
+}
+
+
+/* ---------------------------------------------------------
+   Credits
+
+   "Outbyte" (CC BY 4.0) and the piano
+   samples (CC BY 3.0) require credit.
+--------------------------------------------------------- */
+
+.credits {
+  width: min(94vw, 960px);
+
+  margin: 10px auto 26px;
+
+  padding-top: 16px;
+
+  border-top:
+    1px solid
+    rgba(148, 163, 184, 0.18);
+
+  color: #64748b;
+
+  font-size: 0.74rem;
+  line-height: 1.6;
+
+  text-align: center;
+}
+
+
+.credits p {
+  margin: 0 0 6px;
+}
+
+
+.credits strong {
+  color: #94a3b8;
+}
+
+
+.credits a {
+  color: #a855f7;
+
+  text-decoration: none;
+}
+
+
+.credits a:hover {
+  text-decoration: underline;
 }

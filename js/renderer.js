@@ -1,3 +1,10 @@
+/*
+ * Fallback tile height, matching the
+ * CSS, when game.js does not set one.
+ */
+const MAX_TILE_HEIGHT = 40;
+
+
 export function createRenderer() {
   const noteHighwayEl =
     document.getElementById("noteHighway");
@@ -7,6 +14,12 @@ export function createRenderer() {
 
   const gameArea =
     document.getElementById("gameArea");
+
+  const setupScreen =
+    document.getElementById("setupScreen");
+
+  const welcomeScreen =
+    document.getElementById("welcomeScreen");
 
   const targetNoteEl =
     document.getElementById("targetNote");
@@ -86,6 +99,11 @@ export function createRenderer() {
       "finalTimingError"
     );
 
+  const finalHoldsEl =
+    document.getElementById(
+      "finalHolds"
+    );
+
   const playAgainBtn =
     document.getElementById(
       "playAgainBtn"
@@ -94,6 +112,21 @@ export function createRenderer() {
   const resultsLeaderboardBtn =
     document.getElementById(
       "resultsLeaderboardBtn"
+    );
+
+  const offsetSuggestionEl =
+    document.getElementById(
+      "offsetSuggestion"
+    );
+
+  const offsetSuggestionTextEl =
+    document.getElementById(
+      "offsetSuggestionText"
+    );
+
+  const applyOffsetBtn =
+    document.getElementById(
+      "applyOffsetBtn"
     );
 
 
@@ -133,6 +166,47 @@ export function createRenderer() {
 
 
   /*
+   * Horizontal centre of every piano
+   * key, relative to the note highway.
+   *
+   * Measured once per game instead of
+   * per falling tile: reading layout
+   * while tiles are moving is slow.
+   */
+  let keyPositions = null;
+
+
+  function measureKeyPositions() {
+    if (!noteHighwayEl) {
+      return;
+    }
+
+    const highwayLeft =
+      noteHighwayEl
+        .getBoundingClientRect()
+        .left;
+
+    keyPositions = new Map();
+
+    document
+      .querySelectorAll(".key")
+      .forEach(
+        (key) => {
+          const keyRect =
+            key.getBoundingClientRect();
+
+          keyPositions.set(
+            key.dataset.note,
+            keyRect.left +
+              keyRect.width / 2 -
+              highwayLeft
+          );
+        }
+      );
+  }
+
+
+  /*
    * =============================
    * GAME DISPLAY
    * =============================
@@ -147,9 +221,34 @@ export function createRenderer() {
   }
 
 
+  /*
+   * Swaps the welcome screen for the
+   * song, difficulty and name controls.
+   */
+  function showSetup() {
+    if (welcomeScreen) {
+      welcomeScreen.classList.add(
+        "hidden"
+      );
+    }
+
+    if (setupScreen) {
+      setupScreen.classList.remove(
+        "hidden"
+      );
+    }
+  }
+
+
   function showGame() {
     closeGameOver();
     closeLeaderboard();
+
+    if (setupScreen) {
+      setupScreen.classList.add(
+        "hidden"
+      );
+    }
 
     if (startBtn) {
       startBtn.classList.add(
@@ -280,7 +379,9 @@ export function createRenderer() {
    */
 
   function createFallingNote(
-    noteName
+    noteName,
+    height,
+    isLongNote
   ) {
     if (!noteHighwayEl) {
       console.error(
@@ -291,17 +392,16 @@ export function createRenderer() {
     }
 
 
-    /*
-     * Find the corresponding
-     * piano key first.
-     */
-    const matchingKey =
-      document.querySelector(
-        `.key[data-note="${noteName}"]`
-      );
+    if (!keyPositions) {
+      measureKeyPositions();
+    }
 
 
-    if (!matchingKey) {
+    const horizontalPosition =
+      keyPositions.get(noteName);
+
+
+    if (horizontalPosition === undefined) {
       console.error(
         `No piano key found for falling note: ${noteName}`
       );
@@ -320,6 +420,30 @@ export function createRenderer() {
 
     noteEl.className =
       "falling-note";
+
+
+    /*
+     * Long notes are drawn as a bar with
+     * a tail, so it is clear the key stays
+     * down until the whole tile has gone
+     * past the line.
+     */
+    if (isLongNote) {
+      noteEl.classList.add("hold");
+    }
+
+
+    /*
+     * Shorter tiles when notes are close
+     * together (set by game.js).
+     */
+    if (height) {
+      noteEl.style.minHeight =
+        `${height}px`;
+
+      noteEl.style.height =
+        `${height}px`;
+    }
 
 
     /*
@@ -386,59 +510,44 @@ export function createRenderer() {
       );
 
 
-    /*
-     * Add the note before measuring
-     * its position.
-     */
+    noteEl.style.left =
+      `${horizontalPosition}px`;
+
+
     noteHighwayEl.appendChild(
       noteEl
     );
 
 
     /*
-     * =============================
-     * HORIZONTAL ALIGNMENT
-     * =============================
-     *
-     * Calculate the centre of the
-     * matching piano key relative
-     * to the note highway.
-     */
-
-    const highwayRect =
-      noteHighwayEl
-        .getBoundingClientRect();
-
-    const keyRect =
-      matchingKey
-        .getBoundingClientRect();
-
-    const keyCentre =
-      keyRect.left +
-      keyRect.width / 2;
-
-    const horizontalPosition =
-      keyCentre -
-      highwayRect.left;
-
-
-    noteEl.style.left =
-      `${horizontalPosition}px`;
-
-
-    /*
      * game.js controls vertical
      * movement using these methods.
+     *
+     * Moving with transform keeps the
+     * browser from re-laying out the
+     * page on every frame.
      */
 
     function setPosition(y) {
-      noteEl.style.top =
-        `${y}px`;
+      noteEl.style.transform =
+        `translate3d(-50%, ${y}px, 0)`;
     }
 
 
     function getHeight() {
-      return noteEl.offsetHeight;
+      return height || MAX_TILE_HEIGHT;
+    }
+
+
+    /*
+     * Highlights a long note while the
+     * player is holding its key.
+     */
+    function setHolding(holding) {
+      noteEl.classList.toggle(
+        "holding",
+        holding
+      );
     }
 
 
@@ -449,6 +558,7 @@ export function createRenderer() {
 
     return {
       setPosition,
+      setHolding,
       getHeight,
       remove
     };
@@ -487,7 +597,7 @@ export function createRenderer() {
 
   function showLeaderboard(
     entries,
-    difficulty
+    title
   ) {
     if (
       !leaderboardBodyEl ||
@@ -505,7 +615,7 @@ export function createRenderer() {
       "";
 
     leaderboardDifficultyEl.textContent =
-      `${difficulty} Rankings`;
+      `${title} Rankings`;
 
 
     /*
@@ -635,7 +745,10 @@ export function createRenderer() {
     miss,
     accuracy,
     maxCombo,
-    averageTimingError
+    averageTimingError,
+    holdsCompleted,
+    holdsBroken,
+    offsetSuggestion
   }) {
     clearJudgement();
     clearFeedback();
@@ -730,6 +843,61 @@ export function createRenderer() {
     }
 
 
+    if (finalHoldsEl) {
+      finalHoldsEl.textContent =
+        `${holdsCompleted} / ${
+          holdsCompleted + holdsBroken
+        }`;
+    }
+
+
+    /*
+     * Timing tip, e.g. "You hit 80 ms
+     * late on average", with a button
+     * that corrects the audio offset.
+     */
+    if (offsetSuggestionEl) {
+      offsetSuggestionEl.classList.toggle(
+        "hidden",
+        !offsetSuggestion
+      );
+    }
+
+
+    if (
+      offsetSuggestion &&
+      offsetSuggestionTextEl &&
+      applyOffsetBtn
+    ) {
+      offsetSuggestionTextEl.textContent =
+        offsetSuggestion.message;
+
+      applyOffsetBtn.onclick =
+        () => {
+          offsetSuggestion.apply();
+
+          offsetSuggestionTextEl.textContent =
+            "Timing adjusted. Play again to try it.";
+
+          applyOffsetBtn.onclick =
+            null;
+        };
+    }
+
+
+    /*
+     * Bring back the song and difficulty
+     * controls for the next game.
+     */
+    showSetup();
+
+    if (startBtn) {
+      startBtn.classList.remove(
+        "hidden"
+      );
+    }
+
+
     /*
      * Display Game Over modal.
      */
@@ -816,6 +984,8 @@ export function createRenderer() {
    */
 
   return {
+    measureKeyPositions,
+    showSetup,
     showGame,
     showTargetNote,
     showFeedback,

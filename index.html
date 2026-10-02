@@ -37,6 +37,122 @@
 
 
     <!-- =========================
+         WELCOME SCREEN
+    ========================== -->
+
+    <section
+      id="welcomeScreen"
+      class="welcome"
+      aria-label="Welcome"
+    >
+
+      <!--
+        Decorative tiles that drift down
+        behind the welcome text.
+      -->
+      <div
+        class="welcome-tiles"
+        aria-hidden="true"
+      >
+        <span class="welcome-tile note-blue"></span>
+        <span class="welcome-tile note-pink"></span>
+        <span class="welcome-tile note-green"></span>
+        <span class="welcome-tile note-orange"></span>
+        <span class="welcome-tile note-cyan"></span>
+        <span class="welcome-tile note-yellow"></span>
+      </div>
+
+      <p class="welcome-tagline">
+        Play real songs on a two octave piano.
+        Notes fall, you play along.
+      </p>
+
+
+      <div class="welcome-steps">
+
+        <div class="welcome-step">
+          <span class="welcome-step-number">
+            1
+          </span>
+
+          <h2>
+            Hit the line
+          </h2>
+
+          <p>
+            Press the piano key when its
+            tile reaches the glowing line.
+            The closer to the beat, the
+            better your score.
+          </p>
+        </div>
+
+
+        <div class="welcome-step">
+          <span class="welcome-step-number">
+            2
+          </span>
+
+          <h2>
+            Hold the long ones
+          </h2>
+
+          <p>
+            Tall tiles are long notes. Keep
+            the key held down until the
+            whole tile has passed the line.
+          </p>
+        </div>
+
+
+        <div class="welcome-step">
+          <span class="welcome-step-number">
+            3
+          </span>
+
+          <h2>
+            Beat your best
+          </h2>
+
+          <p>
+            Pick a song and a difficulty.
+            Your best score for each one is
+            saved to the leaderboard.
+          </p>
+        </div>
+
+      </div>
+
+
+      <button
+        id="playNowBtn"
+        class="welcome-play"
+        type="button"
+      >
+        Play
+      </button>
+
+
+      <p class="welcome-note">
+        Best with headphones. If the music
+        feels out of step with the tiles,
+        nudge the Audio Offset slider on
+        the next screen.
+      </p>
+
+    </section>
+
+
+    <!-- =========================
+         SETUP SCREEN
+    ========================== -->
+
+    <section
+      id="setupScreen"
+      class="hidden"
+    >
+
+    <!-- =========================
          SONG SELECTION
     ========================== -->
 
@@ -52,8 +168,21 @@
           <input
             type="radio"
             name="song"
-            value="outbyte"
+            value="fur-elise"
             checked
+          />
+
+          <span>
+            Für Elise
+          </span>
+        </label>
+
+
+        <label class="song-option">
+          <input
+            type="radio"
+            name="song"
+            value="outbyte"
           />
 
           <span>
@@ -74,18 +203,6 @@
           </span>
         </label>
 
-
-        <label class="song-option">
-          <input
-            type="radio"
-            name="song"
-            value="galactic-spiritual-journey"
-          />
-
-          <span>
-            Galactic Spiritual Journey
-          </span>
-        </label>
 
       </div>
 
@@ -170,6 +287,36 @@
 
 
     <!-- =========================
+         AUDIO OFFSET
+    ========================== -->
+
+    <div class="player-details audio-offset">
+
+      <label for="audioOffset">
+        Audio Offset:
+        <span id="audioOffsetValue">
+          0 ms
+        </span>
+      </label>
+
+      <input
+        id="audioOffset"
+        type="range"
+        min="-200"
+        max="300"
+        step="5"
+        value="0"
+      />
+
+      <p class="audio-offset-hint">
+        Notes reach the line before you hear the beat? Move right.
+        After? Move left. Bluetooth headphones usually need +150 to +250.
+      </p>
+
+    </div>
+
+
+    <!-- =========================
          START BUTTON
     ========================== -->
 
@@ -179,6 +326,8 @@
     >
       Start Game
     </button>
+
+    </section>
 
 
     <!-- =========================
@@ -270,12 +419,33 @@
             </p>
 
             <p>
+              Long Notes Held:
+              <strong id="finalHolds">
+                0
+              </strong>
+            </p>
+
+            <p>
               Average Timing Error:
               <strong id="finalTimingError">
                 0.00s
               </strong>
             </p>
 
+          </div>
+
+          <div
+            id="offsetSuggestion"
+            class="offset-suggestion hidden"
+          >
+            <p id="offsetSuggestionText"></p>
+
+            <button
+              id="applyOffsetBtn"
+              type="button"
+            >
+              Fix My Timing
+            </button>
           </div>
 
           <div class="game-over-actions">
@@ -793,11 +963,59 @@
 
 
   <!-- =========================
+       CREDITS
+
+       "Outbyte" and the piano samples
+       are Creative Commons Attribution
+       licensed, which requires this
+       credit to be shown.
+  ========================== -->
+
+  <footer class="credits">
+
+    <p>
+      <strong>Music:</strong>
+      &ldquo;Outbyte&rdquo; by Beat Mekanik
+      (<a
+        href="https://freemusicarchive.org/music/beat-mekanik/single/outbyte/"
+        target="_blank"
+        rel="noopener"
+      >Free Music Archive</a>,
+      CC&nbsp;BY&nbsp;4.0) &middot;
+      &ldquo;Shadows Behind Neon&rdquo; by
+      <a
+        href="https://stocktune.com/"
+        target="_blank"
+        rel="noopener"
+      >StockTune</a>
+      (royalty free) &middot;
+      &ldquo;F&uuml;r Elise&rdquo; by Ludwig van
+      Beethoven (public domain), backing
+      track generated by this game.
+    </p>
+
+    <p>
+      <strong>Piano sound:</strong>
+      Salamander Grand Piano by Alexander
+      Holm (CC&nbsp;BY&nbsp;3.0) &middot;
+      <strong>Audio engine:</strong>
+      <a
+        href="https://tonejs.github.io/"
+        target="_blank"
+        rel="noopener"
+      >Tone.js</a>
+      (MIT)
+    </p>
+
+  </footer>
+
+
+  <!-- =========================
        TONE.JS
   ========================== -->
 
   <script
-    src="https://unpkg.com/tone@latest/build/Tone.js"
+    src="https://unpkg.com/tone@15.1.22/build/Tone.js"
   ></script>
 
 

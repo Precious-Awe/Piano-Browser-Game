@@ -5,12 +5,17 @@ import {
 
 import {
   playNote,
+  startNote,
+  stopNote,
+  playNoteAtSongTime,
   loadSong,
   startSong,
   pauseSong,
   resumeSong,
   stopSong,
-  getSongTime
+  getSongTime,
+  getAudioOffset,
+  setAudioOffset
 } from "./audio.js";
 
 import {
@@ -26,13 +31,60 @@ import {
 } from "./scoring.js";
 
 import {
+  setTimingDifficulty,
+  getHitWindow,
   calculateTimingError,
   calculateJudgement
 } from "./timing.js";
 
 
-const NOTE_FALL_DURATION = 2500;
+/*
+ * How long a tile takes to fall to the
+ * hit line on each difficulty.
+ *
+ * Slower means more time to find the
+ * key before the tile arrives.
+ */
+const NOTE_FALL_DURATIONS = {
+  easy: 3600,
+  medium: 2900,
+  hard: 2300
+};
+
+
+/*
+ * Tile height limits. When notes are
+ * close together, tiles get shorter
+ * (down to MIN_TILE_HEIGHT) rather than
+ * falling faster, so they never overlap.
+ */
+const MAX_TILE_HEIGHT = 40;
+
+const MIN_TILE_HEIGHT = 26;
+
+// Space kept between two tiles.
+const TILE_GAP_PX = 8;
+
+
+/*
+ * A long note still counts as complete
+ * if the key is released this long
+ * before its end.
+ */
+const HOLD_RELEASE_GRACE = 150;
+
+
 const SONG_END_BUFFER = 1000;
+
+
+/*
+ * After a game, suggest an audio
+ * offset change when the player was
+ * consistently early or late by at
+ * least this much over enough hits.
+ */
+const OFFSET_SUGGESTION_MIN_HITS = 10;
+const OFFSET_SUGGESTION_MIN_ERROR = 20;
 
 
 const keys =
@@ -47,6 +99,18 @@ const pauseBtn =
   );
 
 
+const audioOffsetInput =
+  document.getElementById(
+    "audioOffset"
+  );
+
+
+const audioOffsetValueEl =
+  document.getElementById(
+    "audioOffsetValue"
+  );
+
+
 const scoreTracker =
   createScoreTracker();
 
@@ -58,6 +122,8 @@ const renderer =
 let gameActive = false;
 
 let gamePaused = false;
+
+let gameLoading = false;
 
 let animationFrameId =
   null;
@@ -84,6 +150,24 @@ let currentSong =
   null;
 
 let currentSongNotes = [];
+
+let noteFallDuration =
+  NOTE_FALL_DURATIONS.easy;
+
+let tileHeight =
+  MAX_TILE_HEIGHT;
+
+/*
+ * How far a tile moves per millisecond,
+ * used to draw long notes.
+ */
+let tilePixelsPerMs = 0;
+
+/*
+ * Long notes currently held down,
+ * keyed by note name.
+ */
+const heldNotes = new Map();
 
 
 /*
@@ -113,35 +197,73 @@ export function initialiseGame() {
   }
 
 
+  /*
+   * Long notes end when the player lifts
+   * the mouse or finger, wherever that
+   * happens.
+   */
   window.addEventListener(
-    "resize",
-    positionBlackKeys
+    "pointerup",
+    releaseHolds
+  );
+
+  window.addEventListener(
+    "pointercancel",
+    releaseHolds
   );
 
 
-  const difficultyOptions =
+  window.addEventListener(
+    "resize",
+    () => {
+      positionBlackKeys();
+
+      renderer.measureKeyPositions();
+    }
+  );
+
+
+  /*
+   * Audio offset slider.
+   */
+  if (audioOffsetInput) {
+    audioOffsetInput.addEventListener(
+      "input",
+      () => {
+        setAudioOffset(
+          Number(
+            audioOffsetInput.value
+          )
+        );
+
+        showAudioOffset();
+      }
+    );
+  }
+
+
+  showAudioOffset();
+
+
+  /*
+   * Changing either the song or the
+   * difficulty switches the
+   * leaderboard to that combination.
+   */
+  const selectionOptions =
     document.querySelectorAll(
-      'input[name="difficulty"]'
+      'input[name="song"], input[name="difficulty"]'
     );
 
 
-  difficultyOptions.forEach(
+  selectionOptions.forEach(
     (option) => {
       option.addEventListener(
         "change",
         () => {
-          const difficulty =
-            getSelectedDifficulty();
-
-
-          renderer.showLeaderboard(
-            getLeaderboard(
-              difficulty
-            ),
-
-            formatDifficulty(
-              difficulty
-            )
+          showSelectedLeaderboard(
+            getSelectedSongId(),
+            getSelectedDifficulty()
           );
         }
       );
@@ -150,14 +272,128 @@ export function initialiseGame() {
 
 
   /*
-   * Show the Easy leaderboard
-   * when the page first loads.
+   * Show the leaderboard for the
+   * default selection when the page
+   * first loads.
    */
+  showSelectedLeaderboard(
+    getSelectedSongId(),
+    getSelectedDifficulty()
+  );
+}
+
+
+/*
+ * Leaves the welcome screen and shows
+ * the song and difficulty controls.
+ */
+export function showSetupScreen() {
+  renderer.showSetup();
+}
+
+
+/*
+ * Syncs the slider and its label with
+ * the saved audio offset.
+ */
+function showAudioOffset() {
+  const offset =
+    getAudioOffset();
+
+
+  if (audioOffsetInput) {
+    audioOffsetInput.value =
+      offset;
+  }
+
+
+  if (audioOffsetValueEl) {
+    audioOffsetValueEl.textContent =
+      `${offset > 0 ? "+" : ""}${offset} ms`;
+  }
+}
+
+
+/*
+ * Builds the post-game timing tip.
+ *
+ * Returns null when the player's
+ * timing was centred, or there were
+ * too few hits to tell.
+ */
+function getOffsetSuggestion(
+  stats
+) {
+  const averageError =
+    Math.round(
+      stats.averageSignedTimingError
+    );
+
+
+  if (
+    stats.successfulHits <
+      OFFSET_SUGGESTION_MIN_HITS ||
+    Math.abs(averageError) <
+      OFFSET_SUGGESTION_MIN_ERROR
+  ) {
+    return null;
+  }
+
+
+  /*
+   * Hitting late means the player hears
+   * the music later than the game
+   * expects, so the offset increases by
+   * the same amount (and vice versa).
+   */
+  return {
+    message:
+      `You hit ${Math.abs(averageError)} ms ` +
+      `${averageError > 0 ? "late" : "early"} ` +
+      "on average. This is usually caused by " +
+      "speaker or headphone delay.",
+
+    apply() {
+      setAudioOffset(
+        getAudioOffset() +
+        averageError
+      );
+
+      showAudioOffset();
+    }
+  };
+}
+
+
+/*
+ * Displays the leaderboard for a
+ * song and difficulty combination.
+ */
+function showSelectedLeaderboard(
+  songId,
+  difficulty
+) {
+  const song =
+    getSongById(
+      songId
+    );
+
+
+  const songTitle =
+    song
+      ? song.title
+      : songId;
+
+
   renderer.showLeaderboard(
     getLeaderboard(
-      "easy"
+      songId,
+      difficulty
     ),
-    "Easy"
+
+    `${songTitle} — ${formatDifficulty(
+      difficulty
+    )}`
   );
 }
 
@@ -194,6 +430,98 @@ function beatToMilliseconds(
     hitTimeInSeconds *
     1000
   );
+}
+
+
+/*
+ * Sets the fall duration and tile
+ * height for the current chart.
+ *
+ * Tiles fall at the difficulty's speed.
+ * If the closest two notes would make
+ * tiles overlap on this screen, the
+ * tiles get shorter. Only if even the
+ * shortest tiles would overlap (very
+ * short screens) do they fall faster.
+ */
+function setUpTileLayout() {
+  renderer.measureKeyPositions();
+
+
+  let smallestGap =
+    Infinity;
+
+  for (
+    let index = 1;
+    index < currentSongNotes.length;
+    index += 1
+  ) {
+    smallestGap =
+      Math.min(
+        smallestGap,
+        beatToMilliseconds(
+          currentSongNotes[index].beat
+        ) -
+        beatToMilliseconds(
+          currentSongNotes[index - 1].beat
+        )
+      );
+  }
+
+
+  /*
+   * The distance a tile travels.
+   */
+  const travelDistance =
+    renderer.getNoteHighwayHeight() -
+    MAX_TILE_HEIGHT;
+
+
+  const smallestSpacing =
+    (fallDuration) =>
+      smallestGap *
+      travelDistance /
+      fallDuration;
+
+
+  noteFallDuration =
+    NOTE_FALL_DURATIONS[
+      selectedDifficulty
+    ];
+
+
+  const minimumSpacing =
+    MIN_TILE_HEIGHT +
+    TILE_GAP_PX;
+
+
+  if (
+    smallestSpacing(noteFallDuration) <
+    minimumSpacing
+  ) {
+    noteFallDuration =
+      smallestGap *
+      travelDistance /
+      minimumSpacing;
+  }
+
+
+  tileHeight =
+    Math.round(
+      Math.min(
+        Math.max(
+          smallestSpacing(noteFallDuration) -
+            TILE_GAP_PX,
+          MIN_TILE_HEIGHT
+        ),
+        MAX_TILE_HEIGHT
+      )
+    );
+
+
+  tilePixelsPerMs =
+    travelDistance /
+    noteFallDuration;
 }
 
 
@@ -281,6 +609,11 @@ function formatDifficulty(
  * Starts a new game.
  */
 export async function startGame() {
+  if (gameLoading) {
+    return;
+  }
+
+
   const playerName =
     getPlayerName();
 
@@ -336,6 +669,14 @@ export async function startGame() {
 
 
   /*
+   * Easy gets wider timing windows.
+   */
+  setTimingDifficulty(
+    selectedDifficulty
+  );
+
+
+  /*
    * Retrieve the appropriate chart
    * from the selected song.
    */
@@ -347,12 +688,8 @@ export async function startGame() {
 
 
   /*
-   * Shadows Behind Neon and
-   * Galactic Spiritual Journey
-   * currently have empty charts.
-   *
-   * Do not start their audio until
-   * those charts have been created.
+   * Do not start the audio for a
+   * song/difficulty with no chart.
    */
   if (
     !currentSongNotes ||
@@ -378,10 +715,16 @@ export async function startGame() {
    *
    * audio.js will avoid unnecessarily
    * loading the same file again.
+   *
+   * gameLoading prevents a second
+   * click from starting another game
+   * while the audio is loading.
    */
+  gameLoading = true;
+
   try {
     await loadSong(
-      currentSong.audioPath
+      currentSong
     );
   } catch (error) {
     console.error(
@@ -396,6 +739,8 @@ export async function startGame() {
 
 
     return;
+  } finally {
+    gameLoading = false;
   }
 
 
@@ -436,6 +781,8 @@ export async function startGame() {
 
 
   renderer.showGame();
+
+  setUpTileLayout();
 
   renderer.clearFeedback();
 
@@ -734,7 +1081,7 @@ function spawnUpcomingNotes(
 
     const spawnTime =
       scheduledHitTime -
-      NOTE_FALL_DURATION;
+      noteFallDuration;
 
 
     if (
@@ -766,10 +1113,42 @@ function spawnSongNote(
   scheduledHitTime,
   spawnTime
 ) {
+  /*
+   * A long note is drawn as a tall tile:
+   * its bottom edge reaches the hit line
+   * when the note starts, and its tail
+   * passes the line while it is held.
+   */
+  const holdDuration =
+    songNote.holdBeats
+      ? beatToMilliseconds(
+          songNote.beat +
+            songNote.holdBeats
+        ) -
+        scheduledHitTime
+      : 0;
+
+
+  /*
+   * The tail is exactly as long as the
+   * hold lasts, so the note ends when
+   * the far end of the tile reaches the
+   * hit line.
+   */
   const visualNote =
     renderer
       .createFallingNote(
-        songNote.note
+        songNote.note,
+
+        Math.max(
+          tileHeight,
+          Math.round(
+            holdDuration *
+            tilePixelsPerMs
+          )
+        ),
+
+        holdDuration > 0
       );
 
 
@@ -788,6 +1167,10 @@ function spawnSongNote(
   );
 
 
+  const noteHeight =
+    visualNote.getHeight();
+
+
   activeNotes.push({
     noteName:
       songNote.note,
@@ -797,6 +1180,24 @@ function spawnSongNote(
     spawnTime,
 
     visualNote,
+
+    noteHeight,
+
+    holdDuration,
+
+    holdEndTime:
+      scheduledHitTime +
+      holdDuration,
+
+    holding: false,
+
+    /*
+     * Melody notes played after this
+     * tile is hit (Für Elise on Easy
+     * and Medium).
+     */
+    fills:
+      songNote.fills || [],
 
     judged: false
   });
@@ -824,15 +1225,18 @@ function updateActiveNotes(
       }
 
 
-      const noteHeight =
-        activeNote
-          .visualNote
-          .getHeight();
-
-
+      /*
+       * Every tile moves at the same
+       * speed, set by the standard tile
+       * height. Using each tile's own
+       * height would make long notes
+       * fall slower than short ones, and
+       * later tiles would catch up and
+       * overlap them.
+       */
       const targetY =
         highwayHeight -
-        noteHeight;
+        tileHeight;
 
 
       const noteElapsedTime =
@@ -841,20 +1245,31 @@ function updateActiveNotes(
           .spawnTime;
 
 
+      /*
+       * Not capped at 1: a late tile keeps
+       * falling past the hit line (the
+       * highway hides the overflow)
+       * instead of stopping there, where
+       * the next tile would catch up and
+       * overlap it.
+       */
       const progress =
-        Math.min(
-          Math.max(
-            noteElapsedTime /
-              NOTE_FALL_DURATION,
-            0
-          ),
-          1
+        Math.max(
+          noteElapsedTime /
+            noteFallDuration,
+          0
         );
 
 
+      /*
+       * Positioned by the tile's bottom
+       * edge, which is the note itself;
+       * a long tail hangs above it.
+       */
       const yPosition =
-        progress *
-        targetY;
+        progress * targetY +
+        tileHeight -
+        activeNote.noteHeight;
 
 
       activeNote
@@ -862,6 +1277,26 @@ function updateActiveNotes(
         .setPosition(
           yPosition
         );
+
+
+      /*
+       * A long note being held is judged
+       * when it ends or is released,
+       * not by the hit line.
+       */
+      if (activeNote.holding) {
+        if (
+          elapsedTime >=
+          activeNote.holdEndTime
+        ) {
+          finishHold(
+            activeNote,
+            elapsedTime
+          );
+        }
+
+        return;
+      }
 
 
       const timingError =
@@ -929,11 +1364,6 @@ function handleKeyPress(
   }
 
 
-  playNote(
-    selectedNote
-  );
-
-
   const elapsedTime =
     getSongTime() *
     1000;
@@ -947,11 +1377,45 @@ function handleKeyPress(
 
 
   /*
-   * The player pressed a key for
-   * which there is no active
-   * matching note.
+   * No note of any pitch is near the
+   * hit line, so the player is just
+   * playing the piano (or pressed
+   * early). Like osu!mania, a press
+   * outside the timing window has no
+   * effect.
+   */
+  const hasHittableNote =
+    activeNotes.some(
+      (activeNote) =>
+        !activeNote.judged &&
+        isWithinHitWindow(
+          activeNote,
+          elapsedTime
+        )
+    );
+
+
+  if (
+    !matchingNote &&
+    !hasHittableNote
+  ) {
+    playNote(
+      selectedNote
+    );
+
+    return;
+  }
+
+
+  /*
+   * A note is at the hit line but the
+   * player pressed a different key.
    */
   if (!matchingNote) {
+    playNote(
+      selectedNote
+    );
+
     scoreTracker
       .recordMiss();
 
@@ -988,6 +1452,49 @@ function handleKeyPress(
 
 
   /*
+   * A long note sounds for as long as it
+   * is held; a tap just sounds.
+   */
+  if (matchingNote.holdDuration > 0) {
+    startNote(
+      selectedNote
+    );
+
+    matchingNote.holding = true;
+
+    matchingNote
+      .visualNote
+      .setHolding(true);
+
+    heldNotes.set(
+      selectedNote,
+      matchingNote
+    );
+  } else {
+    playNote(
+      selectedNote
+    );
+  }
+
+
+  /*
+   * Like Magic Tiles, a hit tile plays
+   * the rest of its melody phrase, in
+   * time with the backing track.
+   */
+  matchingNote.fills.forEach(
+    (fill) => {
+      playNoteAtSongTime(
+        fill.note,
+        beatToMilliseconds(
+          fill.beat
+        ) / 1000
+      );
+    }
+  );
+
+
+  /*
    * Perfect hit.
    */
   if (
@@ -995,7 +1502,7 @@ function handleKeyPress(
     "Perfect"
   ) {
     matchingNote.judged =
-      true;
+      !matchingNote.holding;
 
 
     scoreTracker
@@ -1031,7 +1538,7 @@ function handleKeyPress(
     "Good"
   ) {
     matchingNote.judged =
-      true;
+      !matchingNote.holding;
 
 
     scoreTracker
@@ -1057,25 +1564,30 @@ function handleKeyPress(
 
     return;
   }
+}
 
 
-  /*
-   * Matching note was pressed outside
-   * the accepted timing window.
-   */
-  registerMiss(
-    matchingNote,
-
-    timingError < 0
-      ? "Too early. Combo lost."
-      : "Too late. Combo lost."
+/*
+ * Returns whether a note is close
+ * enough to the hit line to be hit.
+ */
+function isWithinHitWindow(
+  activeNote,
+  elapsedTime
+) {
+  return (
+    Math.abs(
+      elapsedTime -
+      activeNote.scheduledHitTime
+    ) <= getHitWindow()
   );
 }
 
 
 /*
- * Finds the closest active note
- * matching the piano key pressed.
+ * Finds the closest note matching the
+ * piano key pressed that is within
+ * the hit window.
  */
 function findClosestMatchingNote(
   selectedNote,
@@ -1086,7 +1598,11 @@ function findClosestMatchingNote(
       (activeNote) =>
         !activeNote.judged &&
         activeNote.noteName ===
-          selectedNote
+          selectedNote &&
+        isWithinHitWindow(
+          activeNote,
+          elapsedTime
+        )
     );
 
 
@@ -1122,6 +1638,122 @@ function findClosestMatchingNote(
 
 
   return candidates[0];
+}
+
+
+/*
+ * Ends a long note, either because the
+ * player let go or because it reached
+ * its end.
+ */
+function finishHold(
+  activeNote,
+  elapsedTime
+) {
+  if (!activeNote.holding) {
+    return;
+  }
+
+
+  activeNote.holding = false;
+
+  heldNotes.delete(
+    activeNote.noteName
+  );
+
+  stopNote(
+    activeNote.noteName
+  );
+
+  activeNote
+    .visualNote
+    .setHolding(false);
+
+
+  /*
+   * Held to the end (or close enough).
+   */
+  if (
+    elapsedTime >=
+    activeNote.holdEndTime -
+      HOLD_RELEASE_GRACE
+  ) {
+    activeNote.judged = true;
+
+    scoreTracker
+      .recordHoldComplete(
+        activeNote.holdDuration
+      );
+
+    renderer.showJudgement(
+      "Hold!"
+    );
+
+    updateStats();
+
+    return;
+  }
+
+
+  /*
+   * Let go too early.
+   */
+  scoreTracker
+    .recordHoldBreak();
+
+  registerMiss(
+    activeNote,
+    "Let go too early. Combo lost."
+  );
+}
+
+
+/*
+ * Called when the player lifts a finger
+ * or mouse button anywhere.
+ */
+function releaseHolds() {
+  if (
+    heldNotes.size === 0 ||
+    !gameActive ||
+    gamePaused
+  ) {
+    return;
+  }
+
+
+  const elapsedTime =
+    getSongTime() *
+    1000;
+
+
+  [...heldNotes.values()].forEach(
+    (activeNote) => {
+      finishHold(
+        activeNote,
+        elapsedTime
+      );
+    }
+  );
+}
+
+
+/*
+ * Silences any held notes without
+ * scoring them, when a game stops.
+ */
+function abandonHolds() {
+  heldNotes.forEach(
+    (activeNote) => {
+      activeNote.holding = false;
+
+      stopNote(
+        activeNote.noteName
+      );
+    }
+  );
+
+  heldNotes.clear();
 }
 
 
@@ -1320,6 +1952,13 @@ function pauseGame() {
   }
 
 
+  /*
+   * Pausing counts as letting go of any
+   * long notes being held.
+   */
+  releaseHolds();
+
+
   pauseSong();
 
 
@@ -1438,6 +2077,8 @@ function stopCurrentGame() {
   gamePaused = false;
 
 
+  abandonHolds();
+
   updatePauseButton();
 
 
@@ -1483,6 +2124,8 @@ function endGame() {
   gamePaused = false;
 
 
+  abandonHolds();
+
   updatePauseButton();
 
 
@@ -1526,15 +2169,14 @@ function endGame() {
   /*
    * Save completed result.
    *
-   * For now the leaderboard remains
-   * separated by difficulty.
-   *
-   * We can decide later whether song
-   * should also become a leaderboard
-   * category.
+   * The leaderboard is separated by
+   * both song and difficulty.
    */
   saveLeaderboardEntry({
     playerName,
+
+    songId:
+      selectedSongId,
 
     difficulty:
       selectedDifficulty,
@@ -1550,18 +2192,9 @@ function endGame() {
   });
 
 
-  const formattedDifficulty =
-    formatDifficulty(
-      selectedDifficulty
-    );
-
-
-  renderer.showLeaderboard(
-    getLeaderboard(
-      selectedDifficulty
-    ),
-
-    formattedDifficulty
+  showSelectedLeaderboard(
+    selectedSongId,
+    selectedDifficulty
   );
 
 
@@ -1586,6 +2219,17 @@ function endGame() {
 
     averageTimingError:
       stats
-        .averageTimingError
+        .averageTimingError,
+
+    holdsCompleted:
+      stats.holdsCompleted,
+
+    holdsBroken:
+      stats.holdsBroken,
+
+    offsetSuggestion:
+      getOffsetSuggestion(
+        stats
+      )
   });
 }
